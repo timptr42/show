@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 240" width="600" height="240">
+  <rect width="600" height="240" fill="#fff"/>
+  <g font-family="Segoe UI, sans-serif" font-size="15" fill="#111">
+    <rect x="220" y="16" width="160" height="48" rx="6" fill="#111"/>
+    <text x="300" y="46" text-anchor="middle" fill="#fff" font-weight="bold">CPL_projects</text>
+    <line x1="300" y1="64" x2="300" y2="88" stroke="#111" stroke-width="2"/>
+    <line x1="120" y1="88" x2="480" y2="88" stroke="#111" stroke-width="2"/>
+    <line x1="120" y1="88" x2="120" y2="108" stroke="#111" stroke-width="2"/>
+    <line x1="300" y1="88" x2="300" y2="108" stroke="#111" stroke-width="2"/>
+    <line x1="480" y1="88" x2="480" y2="108" stroke="#111" stroke-width="2"/>
+    <rect x="40" y="108" width="160" height="56" rx="6" fill="#f6f6f4" stroke="#111" stroke-width="2"/>
+    <text x="120" y="140" text-anchor="middle">Alert-bot</text>
+    <rect x="220" y="108" width="160" height="56" rx="6" fill="#f6f6f4" stroke="#111" stroke-width="2"/>
+    <text x="300" y="140" text-anchor="middle">CURSOR demos</text>
+    <rect x="400" y="108" width="160" height="56" rx="6" fill="#f6f6f4" stroke="#111" stroke-width="2"/>
+    <text x="480" y="140" text-anchor="middle">Talks / show</text>
+    <text x="300" y="200" text-anchor="middle" fill="#4a4a4a" font-size="13">in/ ’ build.py ’ out/index.html</text>
+  </g>
+</svg>

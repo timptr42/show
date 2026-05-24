@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 320" width="520" height="320">
+  <rect width="520" height="320" fill="#fff"/>
+  <g font-family="Segoe UI, sans-serif" font-size="15" fill="#111">
+    <circle cx="260" cy="160" r="110" fill="none" stroke="#d8d8d4" stroke-width="2"/>
+    <rect x="200" y="24" width="120" height="44" rx="6" fill="#f6f6f4" stroke="#111" stroke-width="2"/>
+    <text x="260" y="52" text-anchor="middle">!?5:0 (MD)</text>
+    <rect x="360" y="138" width="120" height="44" rx="6" fill="#f6f6f4" stroke="#111" stroke-width="2"/>
+    <text x="420" y="166" text-anchor="middle">Agent</text>
+    <rect x="200" y="252" width="120" height="44" rx="6" fill="#f6f6f4" stroke="#111" stroke-width="2"/>
+    <text x="260" y="280" text-anchor="middle">Review</text>
+    <rect x="40" y="138" width="120" height="44" rx="6" fill="#0057ff" stroke="#111" stroke-width="2"/>
+    <text x="100" y="166" text-anchor="middle" fill="#fff">Merge</text>
+    <path d="M260 68 L380 150" stroke="#0057ff" stroke-width="2" fill="none"/>
+    <path d="M400 182 L280 252" stroke="#0057ff" stroke-width="2" fill="none"/>
+    <path d="M240 252 L120 182" stroke="#0057ff" stroke-width="2" fill="none"/>
+    <path d="M80 150 L200 68" stroke="#0057ff" stroke-width="2" fill="none"/>
+  </g>
+</svg>

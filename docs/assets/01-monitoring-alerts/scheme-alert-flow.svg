@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 200" width="720" height="200">
+  <rect width="720" height="200" fill="#fff"/>
+  <g font-family="Segoe UI, sans-serif" font-size="16" fill="#111">
+    <rect x="20" y="70" width="120" height="60" rx="6" fill="#f6f6f4" stroke="#111" stroke-width="2"/>
+    <text x="80" y="105" text-anchor="middle">Grafana</text>
+    <path d="M140 100 H180" stroke="#0057ff" stroke-width="3" marker-end="url(#arr)"/>
+    <rect x="180" y="70" width="120" height="60" rx="6" fill="#f6f6f4" stroke="#111" stroke-width="2"/>
+    <text x="240" y="105" text-anchor="middle">Webhook</text>
+    <path d="M300 100 H340" stroke="#0057ff" stroke-width="3" marker-end="url(#arr)"/>
+    <rect x="340" y="70" width="120" height="60" rx="6" fill="#f6f6f4" stroke="#111" stroke-width="2"/>
+    <text x="400" y="105" text-anchor="middle">Alert-bot</text>
+    <path d="M460 100 H500" stroke="#0057ff" stroke-width="3" marker-end="url(#arr)"/>
+    <rect x="500" y="70" width="120" height="60" rx="6" fill="#f6f6f4" stroke="#111" stroke-width="2"/>
+    <text x="560" y="105" text-anchor="middle">Telegram</text>
+    <rect x="640" y="55" width="60" height="90" rx="6" fill="#111"/>
+    <text x="670" y="108" text-anchor="middle" fill="#fff" font-size="13">OK</text>
+  </g>
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#0057ff"/>
+    </marker>
+  </defs>
+</svg>

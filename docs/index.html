@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Вайбкодинг в команде</title>
+  <style>
+    :root {
+      --bg: #f6f6f4;
+      --fg: #111111;
+      --muted: #4a4a4a;
+      --accent: #0057ff;
+      --accent-dim: rgba(0, 87, 255, 0.15);
+      --line: #d8d8d4;
+      --overlay: rgba(8, 8, 12, 0.68);
+      --font: "Segoe UI", system-ui, -apple-system, sans-serif;
+      --bar-h: 72px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: var(--font);
+      background: #000;
+      color: var(--fg);
+      user-select: none;
+    }
+
+    #deck {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s ease;
+    }
+
+    .slide.active {
+      opacity: 1;
+      pointer-events: auto;
+      z-index: 2;
+    }
+
+    /* —— шапка проекта + шаги —— */
+    .talk-header {
+      flex: 0 0 auto;
+      padding: 1.8vh 3.5vw 1.4vh;
+      border-bottom: 4px solid var(--fg);
+      background: var(--bg);
+    }
+
+    .talk-identity {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.4em 1.5em;
+      margin-bottom: 1vh;
+    }
+
+    .project-title {
+      font-size: clamp(32px, 4.8vw, 64px);
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+    }
+
+    .project-author {
+      font-size: clamp(20px, 2.4vw, 36px);
+      font-weight: 600;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .section-steps {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45em;
+      align-items: center;
+    }
+
+    .step-chip {
+      font-size: clamp(12px, 1.25vw, 17px);
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.45em 0.85em;
+      border: 2px solid var(--line);
+      border-radius: 4px;
+      color: var(--muted);
+      background: #fff;
+      transition: all 0.2s ease;
+    }
+
+    .step-chip.done {
+      border-color: var(--fg);
+      color: var(--fg);
+    }
+
+    .step-chip.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      transform: scale(1.04);
+      box-shadow: 0 2px 12px rgba(0, 87, 255, 0.35);
+    }
+
+    /* —— контентные слайды —— */
+    .slide.content {
+      background: var(--bg);
+    }
+
+    .section-label {
+      font-size: clamp(22px, 2.8vw, 40px);
+      font-weight: 800;
+      line-height: 1.1;
+      color: var(--fg);
+      margin-bottom: 0.6vh;
+    }
+
+    .slide-body {
+      flex: 1 1 auto;
+      padding: 2vh 3.5vw 11vh;
+      overflow: auto;
+      font-size: clamp(20px, 2.1vw, 32px);
+      line-height: 1.45;
+      max-width: 1280px;
+    }
+
+    .slide-body ul, .slide-body ol { margin: 0.6em 0 0.6em 1.2em; }
+    .slide-body li { margin: 0.35em 0; }
+    .slide-body p { margin: 0.5em 0; }
+    .slide-body strong { font-weight: 800; }
+
+    .slide-body img,
+    .slide-body svg {
+      display: block;
+      max-width: min(92vw, 960px);
+      max-height: 48vh;
+      margin: 1em auto;
+      border: 2px solid var(--fg);
+      background: #fff;
+    }
+
+    .slide-body table { border-collapse: collapse; margin: 1em 0; font-size: 0.85em; }
+    .slide-body th, .slide-body td { border: 2px solid var(--fg); padding: 0.45em 0.75em; }
+    .slide-body th { background: var(--fg); color: var(--bg); }
+
+    /* —— демо —— */
+    .slide.demo {
+      background: #050505;
+      color: #fff;
+    }
+
+    .slide.demo .talk-header {
+      background: #111;
+      border-bottom-color: #333;
+      padding: 1.2vh 3vw 1vh;
+    }
+
+    .slide.demo .project-title { color: #fff; font-size: clamp(26px, 3.6vw, 48px); }
+    .slide.demo .project-author { color: #aaa; font-size: clamp(16px, 1.8vw, 28px); }
+    .slide.demo .step-chip { background: #1a1a1a; border-color: #444; color: #888; }
+    .slide.demo .step-chip.done { border-color: #ccc; color: #ddd; }
+    .slide.demo .step-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+    .demo-stage {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0.5vh 1.5vw 10vh;
+      width: 100%;
+    }
+
+    .demo-intro {
+      flex: 0 0 auto;
+      color: #bbb;
+      font-size: clamp(14px, 1.4vw, 20px);
+      text-align: center;
+      max-width: 90vw;
+      line-height: 1.3;
+      margin-bottom: 0.8vh;
+      max-height: 8vh;
+      overflow: hidden;
+    }
+
+    .demo-intro:empty { display: none; }
+
+    .demo-media {
+      flex: 1 1 auto;
+      min-height: 0;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .demo-media img,
+    .demo-media video {
+      width: 98vw;
+      height: calc(100vh - var(--bar-h) - 14vh);
+      max-width: 98vw;
+      max-height: calc(100vh - var(--bar-h) - 14vh);
+      object-fit: contain;
+      border: none;
+      box-shadow: 0 4px 48px rgba(0, 0, 0, 0.6);
+    }
+
+    /* —— welcome / questions —— */
+    .slide.cinematic {
+      color: #fff;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .bg-video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
+      filter: brightness(0.5) contrast(1.08);
+    }
+
+    .cinematic-overlay {
+      position: absolute;
+      inset: 0;
+      background: var(--overlay);
+      z-index: 1;
+    }
+
+    .cinematic-content {
+      position: relative;
+      z-index: 2;
+      padding: 6vh 8vw;
+      max-width: 1000px;
+    }
+
+    .cinematic h1 {
+      font-size: clamp(40px, 6.5vw, 88px);
+      font-weight: 900;
+      line-height: 1.05;
+      margin-bottom: 0.3em;
+      text-shadow: 0 2px 32px rgba(0, 0, 0, 0.55);
+    }
+
+    .cinematic .subtitle {
+      font-size: clamp(22px, 2.8vw, 40px);
+      font-weight: 500;
+      color: #e0e0e0;
+    }
+
+    .hint {
+      position: fixed;
+      bottom: 58px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.45);
+      pointer-events: none;
+    }
+
+    #progress-bar {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 30;
+      background: rgba(0, 0, 0, 0.9);
+      color: #fff;
+      padding: 8px 18px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      height: var(--bar-h);
+      justify-content: center;
+    }
+
+    #progress-track {
+      width: 100%;
+      height: 5px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    #progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      transition: width 0.3s ease;
+    }
+
+    #progress-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    #progress-label { color: #ccc; }
+    #progress-count { color: #fff; font-variant-numeric: tabular-nums; }
+
+    #nav-left, #nav-right {
+      position: fixed;
+      top: 0;
+      bottom: var(--bar-h);
+      width: 38%;
+      z-index: 25;
+      cursor: pointer;
+    }
+    #nav-left { left: 0; }
+    #nav-right { right: 0; }
+  </style>
+</head>
+<body>
+  <div id="deck" aria-live="polite"></div>
+  <div id="nav-left" title="Назад" aria-label="Предыдущий слайд"></div>
+  <div id="nav-right" title="Далее" aria-label="Следующий слайд"></div>
+  <div class="hint">Клик / кликер · F11</div>
+
+  <div id="progress-bar">
+    <div id="progress-track"><div id="progress-fill"></div></div>
+    <div id="progress-meta">
+      <span id="progress-label">—</span>
+      <span id="progress-count">0 / 0</span>
+    </div>
+  </div>
+
+  <script>
+    const SLIDES = [{"type": "welcome", "title": "Вайбкодинг в команде", "subtitle": "CPL · май 2026", "videos": ["assets/00-welcome/placeholder-1.mp4", "assets/00-welcome/placeholder-2.mp4", "assets/00-welcome/placeholder-3.mp4"], "block_id": "00-welcome"}, {"type": "section", "block_id": "01-monitoring-alerts", "section": "проблема", "section_title": "Проблема", "step_id": "проблема", "html": "<p>В проде приходили <strong>десятки однотипных алертов</strong> в чат: дежурный тратил время на фильтрацию, а не на исправление.</p>\n<ul>\n<li>Нет единого формата сообщения</li>\n<li>Дубли при каскадных сбоях</li>\n<li>Сложно понять «что делать дальше»</li>\n</ul>", "block_title": "Мониторинг и алерты", "author": "Алексей · CPL", "block_steps": [{"id": "проблема", "label": "Проблема"}, {"id": "инструменты", "label": "Инструменты"}, {"id": "решение", "label": "Решение"}, {"id": "вопросы?", "label": "Вопросы"}]}, {"type": "section", "block_id": "01-monitoring-alerts", "section": "инструменты", "section_title": "Инструменты", "step_id": "инструменты", "html": "<table>\n<thead>\n<tr>\n<th>Инструмент</th>\n<th>Зачем</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>Python + aiogram</td>\n<td>Telegram-бот</td>\n</tr>\n<tr>\n<td>Grafana / Alertmanager</td>\n<td>источник событий</td>\n</tr>\n<tr>\n<td>Cursor</td>\n<td>быстрые итерации кода</td>\n</tr>\n</tbody>\n</table>", "block_title": "Мониторинг и алерты", "author": "Алексей · CPL", "block_steps": [{"id": "проблема", "label": "Проблема"}, {"id": "инструменты", "label": "Инструменты"}, {"id": "решение", "label": "Решение"}, {"id": "вопросы?", "label": "Вопросы"}]}, {"type": "section", "block_id": "01-monitoring-alerts", "section": "решение", "section_title": "Решение", "step_id": "решение", "html": "<p>Собрали <strong>Alert-bot</strong>: нормализация payload, дедупликация по fingerprint, кнопки действий в сообщении.</p>\n<pre><code class=\"language-text\">Grafana → webhook → bot → чат (1 сообщение = 1 инцидент)\n</code></pre>\n<p>Схема потока:</p>\n<p><img alt=\"Схема алерт-бота\" src=\"assets/01-monitoring-alerts/scheme-alert-flow.svg\" /></p>", "block_title": "Мониторинг и алерты", "author": "Алексей · CPL", "block_steps": [{"id": "проблема", "label": "Проблема"}, {"id": "инструменты", "label": "Инструменты"}, {"id": "решение", "label": "Решение"}, {"id": "вопросы?", "label": "Вопросы"}]}, {"type": "section", "block_id": "01-monitoring-alerts", "section": "вопросы?", "section_title": "Вопросы?", "step_id": "вопросы?", "html": "<ul>\n<li>Нужны ли эскалации по таймеру?</li>\n<li>Какие каналы кроме Telegram?</li>\n</ul>", "block_title": "Мониторинг и алерты", "author": "Алексей · CPL", "block_steps": [{"id": "проблема", "label": "Проблема"}, {"id": "инструменты", "label": "Инструменты"}, {"id": "решение", "label": "Решение"}, {"id": "вопросы?", "label": "Вопросы"}]}, {"type": "demo", "block_id": "01-monitoring-alerts", "src": "", "mime": "text", "index": 1, "total": 1, "step_id": "демо-1", "intro_html": "<p>Покажем: как выглядит <strong>сырой алерт</strong> и как бот сворачивает его в одно читаемое сообщение.</p>", "block_title": "Мониторинг и алерты", "author": "Алексей · CPL", "block_steps": [{"id": "проблема", "label": "Проблема"}, {"id": "инструменты", "label": "Инструменты"}, {"id": "решение", "label": "Решение"}, {"id": "вопросы?", "label": "Вопросы"}]}, {"type": "section", "block_id": "02-cursor-workflow", "section": "проблема", "section_title": "Проблема", "step_id": "проблема", "html": "<p>Задачи «на пару часов» растягивались: <strong>контекст терялся</strong> между чатами, ревью и ручным копипастом из документации.</p>", "block_title": "Cursor как рабочий процесс", "author": "Мария · CPL", "block_steps": [{"id": "проблема", "label": "Проблема"}, {"id": "инструменты", "label": "Инструменты"}, {"id": "решение", "label": "Решение"}, {"id": "вопросы?", "label": "Вопросы"}]}, {"type": "section", "block_id": "02-cursor-workflow", "section": "инструменты", "section_title": "Инструменты", "step_id": "инструменты", "html": "<ul>\n<li><strong>Cursor</strong> — Agent, правила проекта, skills</li>\n<li><strong>Git</strong> — ветки под эксперименты</li>\n<li><strong>MD-спеки</strong> в репозитории — единый источник требований</li>\n</ul>", "block_title": "Cursor как рабочий процесс", "author": "Мария · CPL", "block_steps": [{"id": "проблема", "label": "Проблема"}, {"id": "инструменты", "label": "Инструменты"}, {"id": "решение", "label": "Решение"}, {"id": "вопросы?", "label": "Вопросы"}]}, {"type": "section", "block_id": "02-cursor-workflow", "section": "решение", "section_title": "Решение", "step_id": "решение", "html": "<p>Зафиксировали <strong>минимальный цикл</strong>: спека в MD → агент по задаче → diff → ручная проверка критичных мест.</p>\n<p><img alt=\"Цикл вайбкодинга\" src=\"assets/02-cursor-workflow/scheme-cursor-cycle.svg\" /></p>\n<p>Правила в <code>.cursor/rules</code> снижают «угадывание» стиля кода.</p>", "block_title": "Cursor как рабочий процесс", "author": "Мария · CPL", "block_steps": [{"id": "проблема", "label": "Проблема"}, {"id": "инструменты", "label": "Инструменты"}, {"id": "решение", "label": "Решение"}, {"id": "вопросы?", "label": "Вопросы"}]}, {"type": "section", "block_id": "02-cursor-workflow", "section": "вопросы?", "section_title": "Вопросы?", "step_id": "вопросы?", "html": "<p>Где проходит граница «доверяем агенту» vs «пишем сами»?</p>", "block_title": "Cursor как рабочий процесс", "author": "Мария · CPL", "block_steps": [{"id": "проблема", "label": "Проблема"}, {"id": "инструменты", "label": "Инструменты"}, {"id": "решение", "label": "Решение"}, {"id": "вопросы?", "label": "Вопросы"}]}, {"type": "demo", "block_id": "02-cursor-workflow", "src": "", "mime": "text", "index": 1, "total": 1, "step_id": "демо-1", "intro_html": "<p>Сравним: запрос без контекста и запрос <strong>со спекой + правилами</strong> — разница в качестве diff.</p>", "block_title": "Cursor как рабочий процесс", "author": "Мария · CPL", "block_steps": [{"id": "проблема", "label": "Проблема"}, {"id": "инструменты", "label": "Инструменты"}, {"id": "решение", "label": "Решение"}, {"id": "вопросы?", "label": "Вопросы"}]}, {"type": "section", "block_id": "03-git-organization", "section": "проблема", "section_title": "Проблема", "step_id": "проблема", "html": "<p>Проекты разъехались по личным форкам: <strong>непонятно</strong>, куда коммитить демо и эксперименты с ботами.</p>", "block_title": "Организация репозиториев CPL", "author": "Дмитрий · CPL", "block_steps": [{"id": "проблема", "label": "Проблема"}, {"id": "инструменты", "label": "Инструменты"}, {"id": "решение", "label": "Решение"}, {"id": "вопросы?", "label": "Вопросы"}]}, {"type": "section", "block_id": "03-git-organization", "section": "инструменты", "section_title": "Инструменты", "step_id": "инструменты", "html": "<ul>\n<li>GitHub org <strong>CPL-team / CPL_projects</strong></li>\n<li>Отдельные «пространства» под направления</li>\n<li>Теги и README в корне каждого пространства</li>\n</ul>", "block_title": "Организация репозиториев CPL", "author": "Дмитрий · CPL", "block_steps": [{"id": "проблема", "label": "Проблема"}, {"id": "инструменты", "label": "Инструменты"}, {"id": "решение", "label": "Решение"}, {"id": "вопросы?", "label": "Вопросы"}]}, {"type": "section", "block_id": "03-git-organization", "section": "решение", "section_title": "Решение", "step_id": "решение", "html": "<p>Договорились: <strong>один org — несколько spaces</strong>, в названии — направление (например, Alert-bot CURSOR).</p>\n<p><img alt=\"Структура репозитория\" src=\"assets/03-git-organization/scheme-git-spaces.svg\" /></p>", "block_title": "Организация репозиториев CPL", "author": "Дмитрий · CPL", "block_steps": [{"id": "проблема", "label": "Проблема"}, {"id": "инструменты", "label": "Инструменты"}, {"id": "решение", "label": "Решение"}, {"id": "вопросы?", "label": "Вопросы"}]}, {"type": "section", "block_id": "03-git-organization", "section": "вопросы?", "section_title": "Вопросы?", "step_id": "вопросы?", "html": "<ul>\n<li>Нужен ли шаблон репозитория (cookiecutter)?</li>\n<li>Кто апрувит перенос из личного форка?</li>\n</ul>", "block_title": "Организация репозиториев CPL", "author": "Дмитрий · CPL", "block_steps": [{"id": "проблема", "label": "Проблема"}, {"id": "инструменты", "label": "Инструменты"}, {"id": "решение", "label": "Решение"}, {"id": "вопросы?", "label": "Вопросы"}]}, {"type": "demo", "block_id": "03-git-organization", "src": "", "mime": "text", "index": 1, "total": 1, "step_id": "демо-1", "intro_html": "<p>Покажем карту каталогов и как завести новый блок выступления по тому же шаблону <code>in/</code> → <code>out/</code>.</p>", "block_title": "Организация репозиториев CPL", "author": "Дмитрий · CPL", "block_steps": [{"id": "проблема", "label": "Проблема"}, {"id": "инструменты", "label": "Инструменты"}, {"id": "решение", "label": "Решение"}, {"id": "вопросы?", "label": "Вопросы"}]}, {"type": "questions", "title": "Вопросы?", "subtitle": "Спасибо!", "html": "", "videos": ["assets/99-questions/placeholder-1.mp4", "assets/99-questions/placeholder-2.mp4", "assets/99-questions/placeholder-3.mp4"], "block_id": "99-questions"}];
+
+    const deck = document.getElementById('deck');
+    const progressFill = document.getElementById('progress-fill');
+    const progressLabel = document.getElementById('progress-label');
+    const progressCount = document.getElementById('progress-count');
+
+    let index = 0;
+    let bgVideoEl = null;
+    let bgVideoList = [];
+    let bgVideoIdx = 0;
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function renderSteps(data) {
+      if (!data.block_steps || !data.block_steps.length) return '';
+      const current = data.step_id || '';
+      let passed = true;
+      return data.block_steps.map(step => {
+        let cls = 'step-chip';
+        if (step.id === current) {
+          cls += ' active';
+          passed = false;
+        } else if (passed) {
+          cls += ' done';
+        }
+        return `<span class="${cls}" data-step="${escapeHtml(step.id)}">${escapeHtml(step.label)}</span>`;
+      }).join('');
+    }
+
+    function renderTalkHeader(data) {
+      const steps = renderSteps(data);
+      const author = data.author
+        ? `<p class="project-author">${escapeHtml(data.author)}</p>`
+        : '';
+      return `
+        <header class="talk-header">
+          <div class="talk-identity">
+            <h1 class="project-title">${escapeHtml(data.block_title || '')}</h1>
+            ${author}
+          </div>
+          ${steps ? `<nav class="section-steps" aria-label="Разделы выступления">${steps}</nav>` : ''}
+        </header>
+      `;
+    }
+
+    function renderSlide(data, i) {
+      const el = document.createElement('section');
+      el.className = 'slide';
+      el.dataset.index = String(i);
+
+      if (data.type === 'welcome' || data.type === 'questions') {
+        el.classList.add('cinematic');
+        el.innerHTML = `
+          <video class="bg-video" muted playsinline autoplay></video>
+          <div class="cinematic-overlay"></div>
+          <div class="cinematic-content cinematic">
+            <h1>${escapeHtml(data.title || '')}</h1>
+            ${data.subtitle ? `<p class="subtitle">${escapeHtml(data.subtitle)}</p>` : ''}
+          </div>
+        `;
+        el.dataset.videos = JSON.stringify(data.videos || []);
+        return el;
+      }
+
+      if (data.type === 'demo') {
+        el.classList.add('demo');
+        const media = data.mime === 'video'
+          ? `<video src="${data.src}" controls autoplay playsinline></video>`
+          : data.mime === 'image'
+            ? `<img src="${data.src}" alt="Демо ${data.index}">`
+            : `<p>Нет медиа</p>`;
+        el.innerHTML = `
+          ${renderTalkHeader(data)}
+          <div class="demo-stage">
+            <div class="demo-intro">${data.intro_html || ''}</div>
+            <div class="demo-media">${media}</div>
+          </div>
+        `;
+        return el;
+      }
+
+      el.classList.add('content');
+      el.innerHTML = `
+        ${renderTalkHeader(data)}
+        <div class="slide-body">
+          <h2 class="section-label">${escapeHtml(data.section_title || '')}</h2>
+          ${data.html || ''}
+        </div>
+      `;
+      return el;
+    }
+
+    function buildDeck() {
+      SLIDES.forEach((s, i) => deck.appendChild(renderSlide(s, i)));
+    }
+
+    function stopBgVideo() {
+      if (bgVideoEl) {
+        bgVideoEl.pause();
+        bgVideoEl.removeAttribute('src');
+        bgVideoEl.load();
+      }
+      bgVideoList = [];
+      bgVideoIdx = 0;
+      bgVideoEl = null;
+    }
+
+    function startBgRotation(slideEl) {
+      stopBgVideo();
+      const raw = slideEl.dataset.videos;
+      if (!raw) return;
+      bgVideoList = JSON.parse(raw);
+      if (!bgVideoList.length) return;
+
+      bgVideoEl = slideEl.querySelector('.bg-video');
+      if (!bgVideoEl) return;
+
+      bgVideoIdx = Math.floor(Math.random() * bgVideoList.length);
+      bgVideoEl.muted = true;
+      bgVideoEl.playsInline = true;
+      bgVideoEl.loop = false;
+
+      const playCurrent = () => {
+        bgVideoEl.src = bgVideoList[bgVideoIdx];
+        bgVideoEl.play().catch(() => {});
+      };
+
+      bgVideoEl.onended = () => {
+        let next;
+        do {
+          next = Math.floor(Math.random() * bgVideoList.length);
+        } while (bgVideoList.length > 1 && next === bgVideoIdx);
+        bgVideoIdx = next;
+        playCurrent();
+      };
+
+      playCurrent();
+    }
+
+    function pauseInactiveMedia() {
+      deck.querySelectorAll('video').forEach(v => {
+        if (!v.classList.contains('bg-video')) v.pause();
+      });
+    }
+
+    function playDemoVideo(slideEl) {
+      const v = slideEl.querySelector('.demo-media video');
+      if (v) {
+        v.muted = false;
+        v.currentTime = 0;
+        v.play().catch(() => {});
+      }
+    }
+
+    function updateUI() {
+      const nodes = deck.querySelectorAll('.slide');
+      nodes.forEach((n, i) => n.classList.toggle('active', i === index));
+
+      const current = SLIDES[index] || {};
+      stopBgVideo();
+
+      const activeEl = nodes[index];
+      if (activeEl) {
+        if (current.type === 'welcome' || current.type === 'questions') {
+          startBgRotation(activeEl);
+        } else if (current.type === 'demo') {
+          playDemoVideo(activeEl);
+        }
+      }
+
+      const total = SLIDES.length;
+      progressFill.style.width = (total ? ((index + 1) / total) * 100 : 0) + '%';
+
+      let label = current.block_title || current.title || 'Выступление';
+      if (current.section_title) label += ' — ' + current.section_title;
+      if (current.type === 'demo') label += ' · демо ' + current.index;
+      progressLabel.textContent = label;
+      progressCount.textContent = (index + 1) + ' / ' + total;
+    }
+
+    function go(delta) {
+      const next = index + delta;
+      if (next < 0 || next >= SLIDES.length) return;
+      pauseInactiveMedia();
+      index = next;
+      updateUI();
+    }
+
+    document.getElementById('nav-left').addEventListener('click', () => go(-1));
+    document.getElementById('nav-right').addEventListener('click', () => go(1));
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
+        e.preventDefault();
+        go(1);
+      }
+      if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        e.preventDefault();
+        go(-1);
+      }
+      if (e.key === 'Home') { index = 0; updateUI(); }
+      if (e.key === 'End') { index = SLIDES.length - 1; updateUI(); }
+    });
+
+    buildDeck();
+    updateUI();
+  </script>
+</body>
+</html>
