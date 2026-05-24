@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 120">
+  <rect width="480" height="120" fill="#fff"/>
+  <text x="80" y="65" text-anchor="middle" font-size="14">5=L 1</text>
+  <text x="240" y="65" text-anchor="middle" font-size="14">5=L 3</text>
+  <text x="400" y="65" text-anchor="middle" font-size="14">5=L 7</text>
+  <line x1="120" y1="60" x2="180" y2="60" stroke="#111" stroke-width="2"/>
+  <line x1="300" y1="60" x2="360" y2="60" stroke="#111" stroke-width="2"/>
+</svg>

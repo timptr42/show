@@ -1,7 +1,17 @@
 @echo off
+chcp 65001 >nul
 cd /d "%~dp0"
-python -m pip install -r requirements.txt -q
-python build.py
-if errorlevel 1 exit /b 1
+title Сборка презентации
+
 echo.
-echo Откройте out\index.html в браузере (F11 — полный экран)
+python -m pip install -r requirements.txt -q
+if errorlevel 1 (
+    echo.
+    echo [ERR] Не удалось установить зависимости.
+    pause
+    exit /b 1
+)
+
+python build.py
+set EXITCODE=%ERRORLEVEL%
+exit /b %EXITCODE%

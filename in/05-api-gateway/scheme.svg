@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 200">
+  <rect width="600" height="200" fill="#fff"/>
+  <text x="300" y="50" text-anchor="middle" font-family="Segoe UI,sans-serif" font-size="16" font-weight="bold">Client</text>
+  <line x1="300" y1="60" x2="300" y2="90" stroke="#111" stroke-width="2"/>
+  <rect x="220" y="90" width="160" height="50" rx="6" fill="#0057ff"/>
+  <text x="300" y="122" text-anchor="middle" fill="#fff" font-size="14">Gateway</text>
+  <line x1="200" y1="140" x2="200" y2="170" stroke="#111"/>
+  <line x1="400" y1="140" x2="400" y2="170" stroke="#111"/>
+  <text x="200" y="185" text-anchor="middle" font-size="13">svc A</text>
+  <text x="400" y="185" text-anchor="middle" font-size="13">svc B</text>
+</svg>

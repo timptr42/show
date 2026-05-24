@@ -4,9 +4,12 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
 import sys
+import time
+import traceback
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -19,7 +22,6 @@ IN_DIR = ROOT / "in"
 OUT_DIR = ROOT / "out"
 TEMPLATES_DIR = ROOT / "templates"
 
-TALK_SECTIONS = ("проблема", "инструменты", "решение", "демо", "вопросы?")
 VIDEO_EXTS = {".mp4", ".webm", ".mov", ".m4v"}
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"}
 DEMO_EXTS = IMAGE_EXTS | VIDEO_EXTS
@@ -31,12 +33,141 @@ MD_EXTENSIONS = [
     "markdown.extensions.tables",
 ]
 
+_ANSI = {
+    "reset": "\033[0m",
+    "dim": "\033[2m",
+    "bold": "\033[1m",
+    "green": "\033[32m",
+    "yellow": "\033[33m",
+    "cyan": "\033[36m",
+    "red": "\033[31m",
+}
+
+
+class BuildLog:
+    """Красивый текстовый лог в консоль."""
+
+    def __init__(self) -> None:
+        self._use_color = sys.stdout.isatty() and os.environ.get("NO_COLOR") is None
+        self._t0 = time.perf_counter()
+        self._warnings = 0
+        self.assets_copied = 0
+
+    def _c(self, code: str, text: str) -> str:
+        if not self._use_color:
+            return text
+        return f"{_ANSI.get(code, '')}{text}{_ANSI['reset']}"
+
+    def _out(self, line: str = "") -> None:
+        print(line, flush=True)
+
+    def banner(self) -> None:
+        self._out()
+        self._out(self._c("cyan", "  +---------------------------------------------------+"))
+        self._out(
+            self._c("cyan", "  |")
+            + self._c("bold", "          СБОРКА HTML-ПРЕЗЕНТАЦИИ                 ")
+            + self._c("cyan", "|")
+        )
+        self._out(self._c("cyan", "  +---------------------------------------------------+"))
+        self._out(self._c("dim", f"  {ROOT}"))
+        self._out()
+
+    def phase(self, title: str) -> None:
+        self._out(self._c("bold", f"  >> {title}"))
+        self._out(self._c("dim", "  " + "-" * 52))
+
+    def ok(self, msg: str, indent: int = 2) -> None:
+        pad = " " * indent
+        self._out(f"{pad}{self._c('green', '[ok]')} {msg}")
+
+    def item(self, msg: str, indent: int = 4) -> None:
+        pad = " " * indent
+        self._out(f"{pad}{self._c('dim', '|')} {msg}")
+
+    def warn(self, msg: str, indent: int = 2) -> None:
+        self._warnings += 1
+        pad = " " * indent
+        self._out(f"{pad}{self._c('yellow', '[!!]')} {msg}")
+
+    def fail(self, msg: str) -> None:
+        self._out(f"  {self._c('red', '[ERR]')} {self._c('bold', msg)}")
+
+    def file_copied(self, src: Path, rel: str) -> None:
+        self.assets_copied += 1
+        size = fmt_size(src.stat().st_size)
+        self.item(f"{src.name}  ({size})  ->  {rel}")
+
+    def summary(self, slides: int, blocks: int) -> None:
+        elapsed = time.perf_counter() - self._t0
+        self._out()
+        self._out(self._c("cyan", "  +---------------------------------------------------+"))
+        self._out(
+            self._c("cyan", "  |")
+            + self._c("green", "  ГОТОВО                                          ")
+            + self._c("cyan", "|")
+        )
+        self._out(self._c("cyan", "  +---------------------------------------------------+"))
+        self.ok(f"Блоков:   {blocks}", indent=4)
+        self.ok(f"Слайдов:  {slides}", indent=4)
+        self.ok(f"Медиа:    {self.assets_copied} файл(ов)", indent=4)
+        self.ok(f"Время:    {elapsed:.1f} с", indent=4)
+        if self._warnings:
+            self.warn(f"Предупреждений: {self._warnings}", indent=4)
+        self._out()
+        self.item(f"Презентация:  {OUT_DIR / 'index.html'}", indent=4)
+        self.item(f"GitHub Pages: {ROOT / 'docs' / 'index.html'}", indent=4)
+        self._out()
+
+    def error_block(self, exc: BaseException) -> None:
+        self._out()
+        self._out(self._c("red", "  +---------------------------------------------------+"))
+        self._out(
+            self._c("red", "  |")
+            + self._c("bold", "  ОШИБКА СБОРКИ                                    ")
+            + self._c("red", "|")
+        )
+        self._out(self._c("red", "  +---------------------------------------------------+"))
+        self.fail(str(exc))
+        for line in traceback.format_exc().strip().splitlines():
+            self._out(self._c("dim", f"    {line}"))
+        self._out()
+
+
+def fmt_size(num: int) -> str:
+    if num < 1024:
+        return f"{num} B"
+    if num < 1024 * 1024:
+        return f"{num / 1024:.1f} KB"
+    return f"{num / (1024 * 1024):.1f} MB"
+
+
+def configure_console() -> None:
+    if sys.platform == "win32":
+        try:
+            sys.stdout.reconfigure(encoding="utf-8")
+            sys.stderr.reconfigure(encoding="utf-8")
+        except (AttributeError, OSError):
+            pass
+        os.system("")  # enable ANSI on Windows
+
+
+def wait_before_exit() -> None:
+    if os.environ.get("BUILD_NO_WAIT"):
+        return
+    print()
+    print("  " + "-" * 52)
+    try:
+        input("  Нажмите Enter, чтобы закрыть окно... ")
+    except EOFError:
+        pass
+
 
 @dataclass
 class Block:
     folder: Path
     order_key: str
-    block_type: str  # welcome | talk | questions
+    block_type: str
     meta: dict = field(default_factory=dict)
     sections: dict[str, str] = field(default_factory=dict)
     raw_md: str = ""
@@ -116,44 +247,41 @@ def list_block_media(folder: Path, exclude_names: set[str]) -> list[Path]:
 
 def list_videos(folder: Path) -> list[Path]:
     return sorted(
-        p
-        for p in folder.iterdir()
-        if p.is_file() and p.suffix.lower() in VIDEO_EXTS
+        p for p in folder.iterdir() if p.is_file() and p.suffix.lower() in VIDEO_EXTS
     )
 
 
-def copy_asset(src: Path, dest_dir: Path) -> str:
+def copy_asset(src: Path, dest_dir: Path, log: BuildLog) -> str:
     dest_dir.mkdir(parents=True, exist_ok=True)
     dest = dest_dir / src.name
     shutil.copy2(src, dest)
     rel = dest.relative_to(OUT_DIR).as_posix()
+    log.file_copied(src, rel)
     return rel
 
 
-def generate_placeholder_videos(dest_dir: Path, count: int = 3) -> list[Path]:
-    """Создаёт короткие mp4-заглушки в out (не трогает in/)."""
+def generate_placeholder_videos(dest_dir: Path, log: BuildLog, count: int = 3) -> list[Path]:
     try:
         import imageio.v3 as iio
         import numpy as np
     except ImportError:
+        log.warn("imageio не установлен — видео-заглушки не созданы")
         return []
 
     dest_dir.mkdir(parents=True, exist_ok=True)
-    palette = [
-        (24, 24, 32),
-        (32, 48, 72),
-        (48, 32, 56),
-    ]
+    palette = [(24, 24, 32), (32, 48, 72), (48, 32, 56)]
     created: list[Path] = []
+    log.item("генерация mp4-заглушек...")
     for i in range(count):
         color = palette[i % len(palette)]
         base = np.full((368, 640, 3), color, dtype=np.uint8)
-        seq = []
-        for t in range(45):
-            factor = 0.85 + 0.15 * ((t % 30) / 29)
-            seq.append(np.clip(base * factor, 0, 255).astype(np.uint8))
+        seq = [
+            np.clip(base * (0.85 + 0.15 * ((t % 30) / 29)), 0, 255).astype(np.uint8)
+            for t in range(45)
+        ]
         target = dest_dir / f"placeholder-{i + 1}.mp4"
         iio.imwrite(target, seq, fps=15, codec="libx264")
+        log.file_copied(target, target.relative_to(OUT_DIR).as_posix())
         created.append(target)
     return created
 
@@ -180,31 +308,35 @@ def load_block(folder: Path) -> Block:
     )
 
 
-def _block_steps(demo_count: int) -> list[dict[str, str]]:
-    steps = [
-        {"id": "проблема", "label": "Проблема"},
-        {"id": "инструменты", "label": "Инструменты"},
-        {"id": "решение", "label": "Решение"},
-    ]
-    for i in range(1, demo_count + 1):
-        steps.append({"id": f"демо-{i}", "label": f"Демо {i}"})
-    steps.append({"id": "вопросы?", "label": "Вопросы"})
-    return steps
+def _block_type_label(block_type: str) -> str:
+    return {"welcome": "заглушка", "questions": "Q&A", "talk": "выступление"}.get(
+        block_type, block_type
+    )
 
 
-def build_slides(blocks: list[Block]) -> list[dict]:
+def build_slides(blocks: list[Block], log: BuildLog) -> list[dict]:
     slides: list[dict] = []
 
     for block in blocks:
         asset_dir = OUT_DIR / "assets" / block.order_key
         title = block.meta.get("title", block.order_key)
+        author = block.meta.get("author", "")
+        type_label = _block_type_label(block.block_type)
+
+        log.phase(f"Блок {block.order_key}  ({type_label})")
+        head = f"«{title}»"
+        if author:
+            head += f"  —  {author}"
+        log.ok(head)
 
         if block.block_type == "welcome":
             videos = list_videos(block.folder)
             if videos:
-                video_urls = [copy_asset(v, asset_dir) for v in videos]
+                log.item(f"фон: {len(videos)} видео")
+                video_urls = [copy_asset(v, asset_dir, log) for v in videos]
             else:
-                placeholders = generate_placeholder_videos(asset_dir)
+                log.warn("нет видео — создаю заглушки")
+                placeholders = generate_placeholder_videos(asset_dir, log)
                 video_urls = [p.relative_to(OUT_DIR).as_posix() for p in placeholders]
             slides.append(
                 {
@@ -215,14 +347,17 @@ def build_slides(blocks: list[Block]) -> list[dict]:
                     "block_id": block.order_key,
                 }
             )
+            log.ok("слайд: заглушка")
             continue
 
         if block.block_type == "questions":
             videos = list_videos(block.folder)
             if videos:
-                video_urls = [copy_asset(v, asset_dir) for v in videos]
+                log.item(f"фон: {len(videos)} видео")
+                video_urls = [copy_asset(v, asset_dir, log) for v in videos]
             else:
-                placeholders = generate_placeholder_videos(asset_dir)
+                log.warn("нет видео — создаю заглушки")
+                placeholders = generate_placeholder_videos(asset_dir, log)
                 video_urls = [p.relative_to(OUT_DIR).as_posix() for p in placeholders]
             body_html = md_to_html(block.sections.get("текст", ""))
             body_html = rewrite_asset_urls(body_html, block.asset_prefix)
@@ -236,32 +371,19 @@ def build_slides(blocks: list[Block]) -> list[dict]:
                     "block_id": block.order_key,
                 }
             )
+            log.ok("слайд: общие вопросы")
             continue
 
-        # talk block
-        author = block.meta.get("author", "")
         refs = referenced_media(block.raw_md)
-
-        demo_files_preview = [
-            p
-            for p in list_block_media(block.folder, exclude_names={"slide.md"})
-            if p.name.lower() not in refs and p.suffix.lower() in DEMO_EXTS
-        ]
-        demo_files_preview.sort(
-            key=lambda p: (0 if p.name.lower().startswith("demo-") else 1, p.name.lower())
-        )
-        block_steps = _block_steps(len(demo_files_preview))
         talk_meta = {
             "block_title": title,
             "author": author,
-            "block_steps": block_steps,
         }
 
-        for key in ("проблема", "инструменты", "решение", "вопросы?"):
-            section_title = key.capitalize() if key != "вопросы?" else "Вопросы?"
+        section_names = ("проблема", "инструменты", "решение")
+        for key in section_names:
+            section_title = "Вопросы?" if key == "вопросы?" else key.capitalize()
             content = block.sections.get(key, "")
-            if key == "вопросы?":
-                section_title = "Вопросы?"
             html = md_to_html(content)
             html = rewrite_asset_urls(html, block.asset_prefix)
             slides.append(
@@ -275,12 +397,12 @@ def build_slides(blocks: list[Block]) -> list[dict]:
                     **talk_meta,
                 }
             )
+            log.ok(f"слайд: {section_title}")
 
-        # копируем схемы и прочие файлы из MD
         for name in refs:
             src = block.folder / name
             if src.exists():
-                copy_asset(src, asset_dir)
+                copy_asset(src, asset_dir, log)
 
         demo_intro = block.sections.get("демо", "")
         demo_intro_html = rewrite_asset_urls(
@@ -292,14 +414,16 @@ def build_slides(blocks: list[Block]) -> list[dict]:
             for p in list_block_media(block.folder, exclude_names={"slide.md"})
             if p.name.lower() not in refs and p.suffix.lower() in DEMO_EXTS
         ]
-        # приоритет файлам с префиксом demo-
         demo_files.sort(
             key=lambda p: (0 if p.name.lower().startswith("demo-") else 1, p.name.lower())
         )
 
         total_demo = len(demo_files)
+        if total_demo == 0:
+            log.warn("нет файлов demo-* — добавьте видео/фото в папку блока")
+
         for idx, media in enumerate(demo_files, start=1):
-            rel = copy_asset(media, asset_dir)
+            rel = copy_asset(media, asset_dir, log)
             mime = "video" if media.suffix.lower() in VIDEO_EXTS else "image"
             slides.append(
                 {
@@ -314,6 +438,25 @@ def build_slides(blocks: list[Block]) -> list[dict]:
                     **talk_meta,
                 }
             )
+            log.ok(f"слайд: Демо {idx}/{total_demo}")
+
+        # вопросы — после демо
+        key = "вопросы?"
+        content = block.sections.get(key, "")
+        html = md_to_html(content)
+        html = rewrite_asset_urls(html, block.asset_prefix)
+        slides.append(
+            {
+                "type": "section",
+                "block_id": block.order_key,
+                "section": key,
+                "section_title": "Вопросы?",
+                "step_id": key,
+                "html": html,
+                **talk_meta,
+            }
+        )
+        log.ok("слайд: Вопросы?")
 
         if total_demo == 0 and demo_intro_html:
             slides.append(
@@ -333,21 +476,22 @@ def build_slides(blocks: list[Block]) -> list[dict]:
     return slides
 
 
-def clean_out() -> None:
+def clean_out(log: BuildLog) -> None:
     if OUT_DIR.exists():
         shutil.rmtree(OUT_DIR)
+        log.ok("каталог out/ очищен")
     OUT_DIR.mkdir(parents=True)
 
 
-def copy_to_docs() -> None:
-    """Копия собранного сайта в docs/ для GitHub Pages."""
+def copy_to_docs(log: BuildLog) -> None:
     docs = ROOT / "docs"
     if docs.exists():
         shutil.rmtree(docs)
     shutil.copytree(OUT_DIR, docs)
+    log.ok("скопировано в docs/ (GitHub Pages)")
 
 
-def render_index(slides: list[dict], meta: dict) -> None:
+def render_index(slides: list[dict], meta: dict, log: BuildLog) -> None:
     env = Environment(
         loader=FileSystemLoader(TEMPLATES_DIR),
         autoescape=select_autoescape(["html", "xml"]),
@@ -357,10 +501,12 @@ def render_index(slides: list[dict], meta: dict) -> None:
         slides_json=json.dumps(slides, ensure_ascii=False),
         presentation_title=meta.get("presentation_title", "Выступление"),
     )
-    (OUT_DIR / "index.html").write_text(html, encoding="utf-8")
+    out_file = OUT_DIR / "index.html"
+    out_file.write_text(html, encoding="utf-8")
+    log.ok(f"index.html  ({fmt_size(out_file.stat().st_size)})")
 
 
-def collect_blocks() -> list[Block]:
+def collect_blocks(log: BuildLog) -> list[Block]:
     if not IN_DIR.exists():
         raise FileNotFoundError(f"Каталог {IN_DIR} не найден")
 
@@ -370,24 +516,48 @@ def collect_blocks() -> list[Block]:
     if not folders:
         raise FileNotFoundError(f"В {IN_DIR} нет папок блоков")
 
-    return [load_block(folder) for folder in folders]
+    blocks = [load_block(folder) for folder in folders]
+    for b in blocks:
+        log.item(f"{b.order_key}/slide.md")
+    return blocks
 
 
 def main() -> int:
-    print("Сборка презентации...")
-    blocks = collect_blocks()
-    clean_out()
+    log = BuildLog()
+    log.banner()
 
-    slides = build_slides(blocks)
-    presentation_title = blocks[0].meta.get("title", "Выступление") if blocks else "Выступление"
-    render_index(slides, {"presentation_title": presentation_title})
-    copy_to_docs()
+    log.phase("Чтение блоков")
+    blocks = collect_blocks(log)
+    log.ok(f"найдено блоков: {len(blocks)}")
 
-    print(f"Готово: {OUT_DIR / 'index.html'}")
-    print(f"GitHub Pages: {ROOT / 'docs' / 'index.html'}")
-    print(f"Слайдов: {len(slides)}")
+    log.phase("Подготовка out/")
+    clean_out(log)
+
+    log.phase("Сборка слайдов и копирование медиа")
+    slides = build_slides(blocks, log)
+
+    log.phase("Генерация HTML")
+    presentation_title = (
+        blocks[0].meta.get("title", "Выступление") if blocks else "Выступление"
+    )
+    render_index(slides, {"presentation_title": presentation_title}, log)
+
+    log.phase("Публикация docs/")
+    copy_to_docs(log)
+
+    log.summary(slides=len(slides), blocks=len(blocks))
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    configure_console()
+    exit_code = 1
+    log = BuildLog()
+    try:
+        exit_code = main()
+    except Exception as exc:
+        log.error_block(exc)
+        exit_code = 1
+    finally:
+        wait_before_exit()
+    sys.exit(exit_code)

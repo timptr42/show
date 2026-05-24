@@ -27,6 +27,8 @@ jobs:
           python-version: "3.12"
       - run: pip install -r requirements.txt
       - run: python build.py
+        env:
+          BUILD_NO_WAIT: "1"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

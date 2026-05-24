@@ -15,6 +15,7 @@
       --overlay: rgba(8, 8, 12, 0.68);
       --font: "Segoe UI", system-ui, -apple-system, sans-serif;
       --bar-h: 72px;
+      --demo-head-h: 10vh;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -55,7 +56,7 @@
     /* —— шапка проекта + шаги —— */
     .talk-header {
       flex: 0 0 auto;
-      padding: 1.8vh 3.5vw 1.4vh;
+      padding: 1.4vh 3.5vw 1.1vh;
       border-bottom: 4px solid var(--fg);
       background: var(--bg);
     }
@@ -65,55 +66,36 @@
       flex-wrap: wrap;
       align-items: baseline;
       justify-content: space-between;
-      gap: 0.4em 1.5em;
-      margin-bottom: 1vh;
+      gap: 0.35em 1.5em;
     }
 
     .project-title {
-      font-size: clamp(32px, 4.8vw, 64px);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.35em 0.5em;
+      font-size: clamp(28px, 4vw, 56px);
       font-weight: 900;
       line-height: 1.05;
       letter-spacing: -0.02em;
+      flex: 1 1 auto;
+      min-width: 0;
     }
 
     .project-author {
-      font-size: clamp(20px, 2.4vw, 36px);
+      font-size: clamp(18px, 2.1vw, 32px);
       font-weight: 600;
       color: var(--muted);
       white-space: nowrap;
+      flex: 0 0 auto;
     }
 
-    .section-steps {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.45em;
-      align-items: center;
-    }
-
-    .step-chip {
-      font-size: clamp(12px, 1.25vw, 17px);
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      padding: 0.45em 0.85em;
-      border: 2px solid var(--line);
-      border-radius: 4px;
+    .talk-step {
+      font-size: 0.72em;
+      font-weight: 800;
       color: var(--muted);
-      background: #fff;
-      transition: all 0.2s ease;
-    }
-
-    .step-chip.done {
-      border-color: var(--fg);
-      color: var(--fg);
-    }
-
-    .step-chip.active {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #fff;
-      transform: scale(1.04);
-      box-shadow: 0 2px 12px rgba(0, 87, 255, 0.35);
+      letter-spacing: 0.01em;
+      white-space: nowrap;
     }
 
     /* —— контентные слайды —— */
@@ -121,17 +103,10 @@
       background: var(--bg);
     }
 
-    .section-label {
-      font-size: clamp(22px, 2.8vw, 40px);
-      font-weight: 800;
-      line-height: 1.1;
-      color: var(--fg);
-      margin-bottom: 0.6vh;
-    }
-
     .slide-body {
       flex: 1 1 auto;
-      padding: 2vh 3.5vw 11vh;
+      min-height: 0;
+      padding: 1.6vh 3.5vw 11vh;
       overflow: auto;
       font-size: clamp(20px, 2.1vw, 32px);
       line-height: 1.45;
@@ -146,9 +121,9 @@
     .slide-body img,
     .slide-body svg {
       display: block;
-      max-width: min(92vw, 960px);
-      max-height: 48vh;
-      margin: 1em auto;
+      max-width: min(96vw, 1100px);
+      max-height: 58vh;
+      margin: 0.8em auto;
       border: 2px solid var(--fg);
       background: #fff;
     }
@@ -157,51 +132,37 @@
     .slide-body th, .slide-body td { border: 2px solid var(--fg); padding: 0.45em 0.75em; }
     .slide-body th { background: var(--fg); color: var(--bg); }
 
-    /* —— демо —— */
+    /* —— демо (тот же светлый стиль, что и content) —— */
     .slide.demo {
-      background: #050505;
-      color: #fff;
+      background: var(--bg);
+      color: var(--fg);
     }
 
-    .slide.demo .talk-header {
-      background: #111;
-      border-bottom-color: #333;
-      padding: 1.2vh 3vw 1vh;
-    }
-
-    .slide.demo .project-title { color: #fff; font-size: clamp(26px, 3.6vw, 48px); }
-    .slide.demo .project-author { color: #aaa; font-size: clamp(16px, 1.8vw, 28px); }
-    .slide.demo .step-chip { background: #1a1a1a; border-color: #444; color: #888; }
-    .slide.demo .step-chip.done { border-color: #ccc; color: #ddd; }
-    .slide.demo .step-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-
-    .demo-stage {
+    .demo-body {
       flex: 1 1 auto;
       min-height: 0;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 0.5vh 1.5vw 10vh;
-      width: 100%;
+      padding: 1vh 3.5vw 11vh;
+      max-width: 100%;
     }
 
     .demo-intro {
       flex: 0 0 auto;
-      color: #bbb;
-      font-size: clamp(14px, 1.4vw, 20px);
-      text-align: center;
-      max-width: 90vw;
-      line-height: 1.3;
+      color: var(--muted);
+      font-size: clamp(17px, 1.75vw, 26px);
+      line-height: 1.35;
       margin-bottom: 0.8vh;
-      max-height: 8vh;
+      max-height: 10vh;
       overflow: hidden;
     }
 
     .demo-intro:empty { display: none; }
 
+    .demo-intro p { margin: 0.35em 0; }
+
     .demo-media {
-      flex: 1 1 auto;
+      flex: 1 1 0;
       min-height: 0;
       width: 100%;
       display: flex;
@@ -211,21 +172,30 @@
 
     .demo-media img,
     .demo-media video {
-      width: 98vw;
-      height: calc(100vh - var(--bar-h) - 14vh);
-      max-width: 98vw;
-      max-height: calc(100vh - var(--bar-h) - 14vh);
+      display: block;
+      width: 100%;
+      height: 100%;
+      max-width: min(96vw, 1280px);
+      max-height: calc(100vh - var(--bar-h) - var(--demo-head-h) - 2vh);
       object-fit: contain;
-      border: none;
-      box-shadow: 0 4px 48px rgba(0, 0, 0, 0.6);
+      object-position: center center;
+      border: 2px solid var(--fg);
+      background: #fff;
     }
 
     /* —— welcome / questions —— */
     .slide.cinematic {
       color: #fff;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
+      align-items: stretch;
+      justify-content: flex-start;
+    }
+
+    .bg-video-stack {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      background: #000;
     }
 
     .bg-video {
@@ -234,36 +204,63 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
+      opacity: 0;
       z-index: 0;
-      filter: brightness(0.5) contrast(1.08);
+      transition: none;
+      pointer-events: none;
     }
 
-    .cinematic-overlay {
-      position: absolute;
-      inset: 0;
-      background: var(--overlay);
+    /* нижний слой — всегда на полной яркости */
+    .bg-video.is-base {
+      opacity: 1;
       z-index: 1;
     }
 
-    .cinematic-content {
-      position: relative;
+    /* верхний слой — только проявление 0→1, без затухания нижнего */
+    .bg-video.is-overlay {
       z-index: 2;
-      padding: 6vh 8vw;
-      max-width: 1000px;
+      opacity: 0;
+      transition: opacity 1s ease-in-out;
+      will-change: opacity;
+    }
+
+    .bg-video.is-overlay.reveal {
+      opacity: 1;
+    }
+
+    .cinematic-banner {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 2;
+      background: rgba(8, 8, 14, 0.78);
+      border-bottom: 3px solid rgba(255, 255, 255, 0.15);
+      padding: 2.2vh 5vw 2.4vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    .cinematic-content {
+      max-width: 1100px;
+      width: 100%;
+      margin: 0 auto;
+      text-align: center;
     }
 
     .cinematic h1 {
-      font-size: clamp(40px, 6.5vw, 88px);
+      font-size: clamp(32px, 5vw, 72px);
       font-weight: 900;
-      line-height: 1.05;
-      margin-bottom: 0.3em;
-      text-shadow: 0 2px 32px rgba(0, 0, 0, 0.55);
+      line-height: 1.08;
+      margin-bottom: 0.2em;
     }
 
     .cinematic .subtitle {
-      font-size: clamp(22px, 2.8vw, 40px);
+      font-size: clamp(18px, 2.2vw, 32px);
       font-weight: 500;
-      color: #e0e0e0;
+      color: #e8e8e8;
     }
 
     .hint {
@@ -319,23 +316,11 @@
     #progress-label { color: #ccc; }
     #progress-count { color: #fff; font-variant-numeric: tabular-nums; }
 
-    #nav-left, #nav-right {
-      position: fixed;
-      top: 0;
-      bottom: var(--bar-h);
-      width: 38%;
-      z-index: 25;
-      cursor: pointer;
-    }
-    #nav-left { left: 0; }
-    #nav-right { right: 0; }
   </style>
 </head>
 <body>
   <div id="deck" aria-live="polite"></div>
-  <div id="nav-left" title="Назад" aria-label="Предыдущий слайд"></div>
-  <div id="nav-right" title="Далее" aria-label="Следующий слайд"></div>
-  <div class="hint">Клик / кликер · F11</div>
+  <div class="hint">Колесо / стрелки · F11</div>
 
   <div id="progress-bar">
     <div id="progress-track"><div id="progress-fill"></div></div>
@@ -354,9 +339,8 @@
     const progressCount = document.getElementById('progress-count');
 
     let index = 0;
-    let bgVideoEl = null;
-    let bgVideoList = [];
-    let bgVideoIdx = 0;
+    let wheelLocked = false;
+    const BG_CROSSFADE_MS = 1000;
 
     function escapeHtml(s) {
       return String(s)
@@ -366,34 +350,22 @@
         .replace(/"/g, '&quot;');
     }
 
-    function renderSteps(data) {
-      if (!data.block_steps || !data.block_steps.length) return '';
-      const current = data.step_id || '';
-      let passed = true;
-      return data.block_steps.map(step => {
-        let cls = 'step-chip';
-        if (step.id === current) {
-          cls += ' active';
-          passed = false;
-        } else if (passed) {
-          cls += ' done';
-        }
-        return `<span class="${cls}" data-step="${escapeHtml(step.id)}">${escapeHtml(step.label)}</span>`;
-      }).join('');
-    }
-
-    function renderTalkHeader(data) {
-      const steps = renderSteps(data);
+    function renderTalkHeader(data, sectionTitle) {
       const author = data.author
         ? `<p class="project-author">${escapeHtml(data.author)}</p>`
+        : '';
+      const step = sectionTitle
+        ? `<span class="talk-step">[${escapeHtml(sectionTitle.toLowerCase())}]</span>`
         : '';
       return `
         <header class="talk-header">
           <div class="talk-identity">
-            <h1 class="project-title">${escapeHtml(data.block_title || '')}</h1>
+            <h1 class="project-title">
+              <span>${escapeHtml(data.block_title || '')}</span>
+              ${step}
+            </h1>
             ${author}
           </div>
-          ${steps ? `<nav class="section-steps" aria-label="Разделы выступления">${steps}</nav>` : ''}
         </header>
       `;
     }
@@ -406,11 +378,15 @@
       if (data.type === 'welcome' || data.type === 'questions') {
         el.classList.add('cinematic');
         el.innerHTML = `
-          <video class="bg-video" muted playsinline autoplay></video>
-          <div class="cinematic-overlay"></div>
-          <div class="cinematic-content cinematic">
-            <h1>${escapeHtml(data.title || '')}</h1>
-            ${data.subtitle ? `<p class="subtitle">${escapeHtml(data.subtitle)}</p>` : ''}
+          <div class="bg-video-stack" aria-hidden="true">
+            <video class="bg-video bg-video-a" muted playsinline preload="auto"></video>
+            <video class="bg-video bg-video-b" muted playsinline preload="auto"></video>
+          </div>
+          <div class="cinematic-banner">
+            <div class="cinematic-content cinematic">
+              <h1>${escapeHtml(data.title || '')}</h1>
+              ${data.subtitle ? `<p class="subtitle">${escapeHtml(data.subtitle)}</p>` : ''}
+            </div>
           </div>
         `;
         el.dataset.videos = JSON.stringify(data.videos || []);
@@ -420,13 +396,16 @@
       if (data.type === 'demo') {
         el.classList.add('demo');
         const media = data.mime === 'video'
-          ? `<video src="${data.src}" controls autoplay playsinline></video>`
+          ? `<video src="${data.src}" controls playsinline preload="metadata"></video>`
           : data.mime === 'image'
             ? `<img src="${data.src}" alt="Демо ${data.index}">`
             : `<p>Нет медиа</p>`;
+        const demoTitle = data.total > 1
+          ? `Демо ${data.index} / ${data.total}`
+          : 'Демо';
         el.innerHTML = `
-          ${renderTalkHeader(data)}
-          <div class="demo-stage">
+          ${renderTalkHeader(data, demoTitle)}
+          <div class="slide-body demo-body">
             <div class="demo-intro">${data.intro_html || ''}</div>
             <div class="demo-media">${media}</div>
           </div>
@@ -436,11 +415,8 @@
 
       el.classList.add('content');
       el.innerHTML = `
-        ${renderTalkHeader(data)}
-        <div class="slide-body">
-          <h2 class="section-label">${escapeHtml(data.section_title || '')}</h2>
-          ${data.html || ''}
-        </div>
+        ${renderTalkHeader(data, data.section_title || '')}
+        <div class="slide-body">${data.html || ''}</div>
       `;
       return el;
     }
@@ -450,46 +426,160 @@
     }
 
     function stopBgVideo() {
-      if (bgVideoEl) {
-        bgVideoEl.pause();
-        bgVideoEl.removeAttribute('src');
-        bgVideoEl.load();
-      }
-      bgVideoList = [];
-      bgVideoIdx = 0;
-      bgVideoEl = null;
+      deck.querySelectorAll('.slide.cinematic').forEach((slide) => {
+        if (typeof slide._bgStop === 'function') slide._bgStop();
+      });
     }
 
     function startBgRotation(slideEl) {
       stopBgVideo();
       const raw = slideEl.dataset.videos;
       if (!raw) return;
-      bgVideoList = JSON.parse(raw);
-      if (!bgVideoList.length) return;
+      const urls = JSON.parse(raw);
+      if (!urls.length) return;
 
-      bgVideoEl = slideEl.querySelector('.bg-video');
-      if (!bgVideoEl) return;
+      const stack = slideEl.querySelector('.bg-video-stack');
+      const layers = stack ? Array.from(stack.querySelectorAll('.bg-video')) : [];
+      if (layers.length < 2) return;
 
-      bgVideoIdx = Math.floor(Math.random() * bgVideoList.length);
-      bgVideoEl.muted = true;
-      bgVideoEl.playsInline = true;
-      bgVideoEl.loop = false;
+      let front = 0;
+      let back = 1;
+      let currentIdx = Math.floor(Math.random() * urls.length);
+      let transitioning = false;
+      let stopped = false;
 
-      const playCurrent = () => {
-        bgVideoEl.src = bgVideoList[bgVideoIdx];
-        bgVideoEl.play().catch(() => {});
-      };
+      function resetLayerClasses(v) {
+        v.classList.remove('is-base', 'is-overlay', 'reveal', 'visible');
+      }
 
-      bgVideoEl.onended = () => {
+      layers.forEach((v) => {
+        v.muted = true;
+        v.playsInline = true;
+        v.loop = false;
+        v.preload = 'auto';
+        resetLayerClasses(v);
+      });
+
+      function pickNextIdx() {
+        if (urls.length === 1) return 0;
         let next;
         do {
-          next = Math.floor(Math.random() * bgVideoList.length);
-        } while (bgVideoList.length > 1 && next === bgVideoIdx);
-        bgVideoIdx = next;
-        playCurrent();
+          next = Math.floor(Math.random() * urls.length);
+        } while (next === currentIdx);
+        return next;
+      }
+
+      function waitReady(video) {
+        return new Promise((resolve) => {
+          if (video.readyState >= 4) {
+            resolve();
+            return;
+          }
+          const done = () => {
+            video.removeEventListener('canplaythrough', done);
+            video.removeEventListener('canplay', done);
+            video.removeEventListener('error', done);
+            resolve();
+          };
+          video.addEventListener('canplaythrough', done);
+          video.addEventListener('canplay', done);
+          video.addEventListener('error', done);
+        });
+      }
+
+      function loadInto(video, idx) {
+        const url = urls[idx];
+        if (video.dataset.src !== url) {
+          video.dataset.src = url;
+          video.src = url;
+          video.load();
+        } else {
+          video.currentTime = 0;
+        }
+        return waitReady(video).then(() => video.play().catch(() => {}));
+      }
+
+      function revealOverlay(overlayEl) {
+        overlayEl.classList.add('is-overlay');
+        overlayEl.classList.remove('reveal');
+        void overlayEl.offsetWidth;
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => overlayEl.classList.add('reveal'));
+        });
+      }
+
+      function bindAdvanceHandlers(active) {
+        active.onended = () => crossfadeToNext();
+        active.ontimeupdate = () => {
+          const dur = active.duration;
+          if (!dur || dur < 2) return;
+          if (active.currentTime >= dur - 1.2) {
+            active.ontimeupdate = null;
+            crossfadeToNext();
+          }
+        };
+      }
+
+      async function crossfadeToNext() {
+        if (stopped || transitioning) return;
+        transitioning = true;
+
+        const frontEl = layers[front];
+        const backEl = layers[back];
+        const nextIdx = pickNextIdx();
+
+        frontEl.onended = null;
+        frontEl.ontimeupdate = null;
+
+        resetLayerClasses(backEl);
+        await loadInto(backEl, nextIdx);
+        if (stopped) {
+          transitioning = false;
+          return;
+        }
+
+        /* нижний слой остаётся на 100% — верхний плавно накрывает */
+        revealOverlay(backEl);
+
+        window.setTimeout(() => {
+          if (stopped) return;
+          resetLayerClasses(frontEl);
+          frontEl.pause();
+          frontEl.removeAttribute('src');
+          delete frontEl.dataset.src;
+          frontEl.load();
+
+          resetLayerClasses(backEl);
+          backEl.classList.add('is-base');
+
+          currentIdx = nextIdx;
+          [front, back] = [back, front];
+          bindAdvanceHandlers(layers[front]);
+          transitioning = false;
+        }, BG_CROSSFADE_MS + 50);
+      }
+
+      slideEl._bgStop = () => {
+        stopped = true;
+        layers.forEach((v) => {
+          v.onended = null;
+          v.ontimeupdate = null;
+          v.pause();
+          v.removeAttribute('src');
+          delete v.dataset.src;
+          resetLayerClasses(v);
+          v.load();
+        });
+        delete slideEl._bgStop;
       };
 
-      playCurrent();
+      (async () => {
+        const first = layers[0];
+        await loadInto(first, currentIdx);
+        if (stopped) return;
+        first.classList.add('is-base');
+        bindAdvanceHandlers(first);
+      })();
     }
 
     function pauseInactiveMedia() {
@@ -498,13 +588,10 @@
       });
     }
 
-    function playDemoVideo(slideEl) {
-      const v = slideEl.querySelector('.demo-media video');
-      if (v) {
-        v.muted = false;
-        v.currentTime = 0;
-        v.play().catch(() => {});
-      }
+    function pauseDemoVideos(slideEl) {
+      slideEl.querySelectorAll('.demo-media video').forEach((v) => {
+        v.pause();
+      });
     }
 
     function updateUI() {
@@ -519,7 +606,7 @@
         if (current.type === 'welcome' || current.type === 'questions') {
           startBgRotation(activeEl);
         } else if (current.type === 'demo') {
-          playDemoVideo(activeEl);
+          pauseDemoVideos(activeEl);
         }
       }
 
@@ -541,8 +628,14 @@
       updateUI();
     }
 
-    document.getElementById('nav-left').addEventListener('click', () => go(-1));
-    document.getElementById('nav-right').addEventListener('click', () => go(1));
+    document.addEventListener('wheel', (e) => {
+      if (Math.abs(e.deltaY) < 8) return;
+      e.preventDefault();
+      if (wheelLocked) return;
+      wheelLocked = true;
+      setTimeout(() => { wheelLocked = false; }, 380);
+      go(e.deltaY > 0 ? 1 : -1);
+    }, { passive: false });
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {

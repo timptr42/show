@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <rect width="1280" height="720" fill="#f6f6f4"/>
+  <rect x="40" y="40" width="1200" height="640" rx="8" fill="#fff" stroke="#111" stroke-width="3"/>
+  <text x="640" y="320" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="56" font-weight="800" fill="#111">Тестовое демо 1</text>
+  <text x="640" y="400" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="28" fill="#4a4a4a">Портал документации</text>
+</svg>

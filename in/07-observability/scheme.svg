@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 180">
+  <rect width="500" height="180" fill="#fff"/>
+  <ellipse cx="120" cy="90" rx="70" ry="40" fill="#f6f6f4" stroke="#111" stroke-width="2"/>
+  <text x="120" y="95" text-anchor="middle" font-size="14">Metrics</text>
+  <ellipse cx="250" cy="90" rx="70" ry="40" fill="#f6f6f4" stroke="#111" stroke-width="2"/>
+  <text x="250" y="95" text-anchor="middle" font-size="14">Logs</text>
+  <ellipse cx="380" cy="90" rx="70" ry="40" fill="#f6f6f4" stroke="#111" stroke-width="2"/>
+  <text x="380" y="95" text-anchor="middle" font-size="14">Traces</text>
+</svg>
