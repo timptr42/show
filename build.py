@@ -24,7 +24,7 @@ TEMPLATES_DIR = ROOT / "templates"
 
 VIDEO_EXTS = {".mp4", ".webm", ".mov", ".m4v"}
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"}
-DEMO_EXTS = IMAGE_EXTS | VIDEO_EXTS
+MEDIA_EXTS = IMAGE_EXTS | VIDEO_EXTS
 
 MD_EXTENSIONS = [
     "markdown.extensions.extra",
@@ -149,7 +149,7 @@ def configure_console() -> None:
             sys.stderr.reconfigure(encoding="utf-8")
         except (AttributeError, OSError):
             pass
-        os.system("")  # enable ANSI on Windows
+        os.system("")
 
 
 def wait_before_exit() -> None:
@@ -169,9 +169,21 @@ class Block:
     order_key: str
     block_type: str
     meta: dict = field(default_factory=dict)
-    sections: dict[str, str] = field(default_factory=dict)
+    preamble: str = ""
+    sections: list[tuple[str, str]] = field(default_factory=list)
     raw_md: str = ""
     asset_prefix: str = ""
+
+
+@dataclass
+class AssetContext:
+    block: Block
+    asset_dir: Path
+    log: BuildLog
+    copied: dict[str, str] = field(default_factory=dict)
+
+    def rel_url(self, src: Path) -> str:
+        return f"{self.block.asset_prefix}/{src.name}"
 
 
 def parse_frontmatter(text: str) -> tuple[dict, str]:
@@ -185,24 +197,34 @@ def parse_frontmatter(text: str) -> tuple[dict, str]:
     return meta, body
 
 
-def split_sections(body: str) -> dict[str, str]:
-    sections: dict[str, str] = {}
-    current_key: str | None = None
+def split_document(body: str) -> tuple[str, list[tuple[str, str]]]:
+    """Разбивает тело slide.md на преамбулу и упорядоченные секции ##."""
+    preamble_lines: list[str] = []
+    sections: list[tuple[str, str]] = []
+    current_title: str | None = None
     buffer: list[str] = []
 
     for line in body.splitlines():
         heading = re.match(r"^##\s+(.+?)\s*$", line.strip())
         if heading:
-            if current_key is not None:
-                sections[current_key] = "\n".join(buffer).strip()
-            current_key = heading.group(1).strip().lower()
+            if current_title is not None:
+                sections.append((current_title, "\n".join(buffer).strip()))
+            else:
+                preamble_lines.extend(buffer)
+            current_title = heading.group(1).strip()
             buffer = []
+            continue
+        if current_title is None:
+            preamble_lines.append(line)
         else:
             buffer.append(line)
 
-    if current_key is not None:
-        sections[current_key] = "\n".join(buffer).strip()
-    return sections
+    if current_title is not None:
+        sections.append((current_title, "\n".join(buffer).strip()))
+
+    preamble = "\n".join(preamble_lines).strip()
+    preamble = re.sub(r"^---+\s*$", "", preamble, flags=re.MULTILINE).strip()
+    return preamble, sections
 
 
 def md_to_html(text: str) -> str:
@@ -211,44 +233,54 @@ def md_to_html(text: str) -> str:
     return markdown.markdown(text, extensions=MD_EXTENSIONS)
 
 
-def rewrite_asset_urls(html: str, asset_prefix: str) -> str:
-    def repl(match: re.Match[str]) -> str:
-        url = match.group(2)
-        if url.startswith(("http://", "https://", "data:", "#")):
-            return match.group(0)
-        clean = url.lstrip("./")
-        return f'{match.group(1)}{asset_prefix}/{clean}{match.group(3)}'
-
-    return re.sub(r'(<img[^>]+src=")([^"]+)(")', repl, html)
-
-
-def referenced_media(raw_md: str) -> set[str]:
-    refs: set[str] = set()
-    for match in re.finditer(r"!\[[^\]]*\]\(([^)]+)\)", raw_md):
-        path = match.group(1).strip().split()[0]
-        refs.add(Path(path).name.lower())
-    return refs
+def normalize_media_bullets(text: str) -> str:
+    """Строки `- `file.png`` превращает в markdown-картинки."""
+    lines: list[str] = []
+    for line in text.splitlines():
+        match = re.match(r"^-\s+`([^`]+)`\s*$", line.strip())
+        if match and Path(match.group(1)).suffix.lower() in MEDIA_EXTS:
+            name = match.group(1)
+            lines.append(f"![{name}]({name})")
+        else:
+            lines.append(line)
+    return "\n".join(lines)
 
 
-def list_block_media(folder: Path, exclude_names: set[str]) -> list[Path]:
-    files: list[Path] = []
-    for path in sorted(folder.iterdir()):
-        if not path.is_file():
+def resolve_media_path(folder: Path, ref: str) -> Path | None:
+    ref = ref.strip().split()[0]
+    if ref.startswith(("http://", "https://", "data:", "#", "mailto:")):
+        return None
+
+    clean = ref.lstrip("./")
+    candidates: list[Path] = [
+        folder / clean,
+        folder / Path(clean).name,
+    ]
+    for prefix in ("assets/", "videos/", "demo/"):
+        if clean.startswith(prefix):
+            tail = clean[len(prefix) :]
+            candidates.extend([folder / tail, folder / Path(tail).name])
+
+    seen: set[Path] = set()
+    for candidate in candidates:
+        if candidate in seen:
             continue
-        if path.name.lower() in exclude_names:
-            continue
-        if path.suffix.lower() not in DEMO_EXTS:
-            continue
-        if path.name.lower() == "slide.md":
-            continue
-        files.append(path)
-    return files
+        seen.add(candidate)
+        if candidate.is_file():
+            return candidate
 
-
-def list_videos(folder: Path) -> list[Path]:
-    return sorted(
-        p for p in folder.iterdir() if p.is_file() and p.suffix.lower() in VIDEO_EXTS
-    )
+    name = Path(clean).name
+    stem, suffix = Path(name).stem, Path(name).suffix
+    if suffix.lower() in MEDIA_EXTS and "-" in stem:
+        prefix, tail = stem.split("-", 1)
+        if prefix.isdigit():
+            for path in folder.iterdir():
+                if not path.is_file() or path.suffix.lower() != suffix.lower():
+                    continue
+                parts = path.stem.split("-", 1)
+                if len(parts) == 2 and parts[1] == tail:
+                    return path
+    return None
 
 
 def copy_asset(src: Path, dest_dir: Path, log: BuildLog) -> str:
@@ -260,30 +292,98 @@ def copy_asset(src: Path, dest_dir: Path, log: BuildLog) -> str:
     return rel
 
 
-def generate_placeholder_videos(dest_dir: Path, log: BuildLog, count: int = 3) -> list[Path]:
-    try:
-        import imageio.v3 as iio
-        import numpy as np
-    except ImportError:
-        log.warn("imageio не установлен — видео-заглушки не созданы")
-        return []
+def ensure_asset(
+    ctx: AssetContext, ref: str, *, block_label: str
+) -> str | None:
+    if ref.startswith(("http://", "https://", "data:", "#", "mailto:")):
+        return ref
 
-    dest_dir.mkdir(parents=True, exist_ok=True)
-    palette = [(24, 24, 32), (32, 48, 72), (48, 32, 56)]
-    created: list[Path] = []
-    log.item("генерация mp4-заглушек...")
-    for i in range(count):
-        color = palette[i % len(palette)]
-        base = np.full((368, 640, 3), color, dtype=np.uint8)
-        seq = [
-            np.clip(base * (0.85 + 0.15 * ((t % 30) / 29)), 0, 255).astype(np.uint8)
-            for t in range(45)
-        ]
-        target = dest_dir / f"placeholder-{i + 1}.mp4"
-        iio.imwrite(target, seq, fps=15, codec="libx264")
-        log.file_copied(target, target.relative_to(OUT_DIR).as_posix())
-        created.append(target)
-    return created
+    cache_key = ref.strip().lower()
+    if cache_key in ctx.copied:
+        return ctx.copied[cache_key]
+
+    src = resolve_media_path(ctx.block.folder, ref)
+    if src is None:
+        ctx.log.warn(
+            f"{block_label}: пропущена ссылка — файл не найден: «{ref}»"
+        )
+        return None
+
+    rel = copy_asset(src, ctx.asset_dir, ctx.log)
+    ctx.copied[cache_key] = rel
+    ctx.copied[src.name.lower()] = rel
+    return rel
+
+
+def rewrite_html_assets(html: str, ctx: AssetContext, *, block_label: str) -> str:
+    def img_repl(match: re.Match[str]) -> str:
+        tag = match.group(0)
+        src_match = re.search(r'src="([^"]+)"', tag)
+        if not src_match:
+            return tag
+        url = ensure_asset(ctx, src_match.group(1), block_label=block_label)
+        if url is None:
+            return ""
+        if url.startswith(("http://", "https://")):
+            return tag
+        return re.sub(r'src="[^"]+"', f'src="{url}"', tag)
+
+    html = re.sub(r"<img[^>]+src=\"[^\"]+\"[^>]*>", img_repl, html)
+
+    def video_repl(match: re.Match[str]) -> str:
+        src = match.group(2)
+        url = ensure_asset(ctx, src, block_label=block_label)
+        if url is None:
+            return ""
+        attrs = match.group(1)
+        poster_match = re.search(r'poster="([^"]+)"', attrs)
+        if poster_match:
+            poster_url = ensure_asset(
+                ctx, poster_match.group(1), block_label=block_label
+            )
+            if poster_url is None:
+                attrs = re.sub(r'\s*poster="[^"]+"', "", attrs)
+            else:
+                attrs = re.sub(
+                    r'poster="[^"]+"', f'poster="{poster_url}"', attrs
+                )
+        return f'<video{attrs} src="{url}"></video>'
+
+    html = re.sub(r"<video([^>]*)\ssrc=\"([^\"]+)\"[^>]*></video>", video_repl, html)
+    html = re.sub(r"<video([^>]*)\ssrc=\"([^\"]+)\"[^>]*/>", video_repl, html)
+    return html
+
+
+def section_to_html(content: str, ctx: AssetContext, *, block_label: str) -> str:
+    normalized = normalize_media_bullets(content)
+    html = md_to_html(normalized)
+    return rewrite_html_assets(html, ctx, block_label=block_label)
+
+
+def list_folder_videos(folder: Path) -> list[Path]:
+    return sorted(
+        p
+        for p in folder.iterdir()
+        if p.is_file() and p.suffix.lower() in VIDEO_EXTS
+    )
+
+
+def list_unreferenced_media(folder: Path, copied: dict[str, str]) -> list[Path]:
+    files: list[Path] = []
+    for path in sorted(folder.iterdir()):
+        if not path.is_file():
+            continue
+        if path.suffix.lower() not in MEDIA_EXTS:
+            continue
+        if path.name.lower() == "slide.md":
+            continue
+        if path.name.lower() in copied:
+            continue
+        files.append(path)
+    files.sort(
+        key=lambda p: (0 if p.name.lower().startswith("demo-") else 1, p.name.lower())
+    )
+    return files
 
 
 def load_block(folder: Path) -> Block:
@@ -293,7 +393,7 @@ def load_block(folder: Path) -> Block:
 
     raw = slide_path.read_text(encoding="utf-8")
     meta, body = parse_frontmatter(raw)
-    sections = split_sections(body)
+    preamble, sections = split_document(body)
     block_type = meta.get("type", "talk")
     order_key = folder.name
 
@@ -302,6 +402,7 @@ def load_block(folder: Path) -> Block:
         order_key=order_key,
         block_type=block_type,
         meta=meta,
+        preamble=preamble,
         sections=sections,
         raw_md=raw,
         asset_prefix=f"assets/{order_key}",
@@ -314,11 +415,152 @@ def _block_type_label(block_type: str) -> str:
     )
 
 
+def _step_id(title: str) -> str:
+    return title.strip().lower()
+
+
+def build_welcome_or_questions(
+    block: Block, log: BuildLog, slide_type: str
+) -> dict:
+    asset_dir = OUT_DIR / "assets" / block.order_key
+    ctx = AssetContext(block=block, asset_dir=asset_dir, log=log)
+
+    videos = list_folder_videos(block.folder)
+    video_urls: list[str] = []
+    if videos:
+        log.item(f"фон: {len(videos)} видео")
+        for video in videos:
+            video_urls.append(copy_asset(video, asset_dir, log))
+            ctx.copied[video.name.lower()] = video_urls[-1]
+    else:
+        log.item("фон: без видео")
+
+    title = block.meta.get("title", block.order_key)
+    payload: dict = {
+        "type": slide_type,
+        "title": title,
+        "subtitle": block.meta.get("subtitle", ""),
+        "videos": video_urls,
+        "block_id": block.order_key,
+    }
+
+    if slide_type == "questions":
+        text_key = "текст"
+        for section_title, content in block.sections:
+            if section_title.strip().lower() == text_key:
+                payload["html"] = section_to_html(
+                    content, ctx, block_label=f"Блок {block.order_key}"
+                )
+                break
+        else:
+            payload["html"] = ""
+
+    return payload
+
+
+def build_talk_slides(block: Block, log: BuildLog) -> list[dict]:
+    asset_dir = OUT_DIR / "assets" / block.order_key
+    ctx = AssetContext(block=block, asset_dir=asset_dir, log=log)
+    block_label = f"Блок {block.order_key}"
+
+    title = block.meta.get("title", block.order_key)
+    author = block.meta.get("author", "")
+    talk_meta = {"block_title": title, "author": author}
+    slides: list[dict] = []
+
+    if block.preamble.strip():
+        html = section_to_html(block.preamble, ctx, block_label=block_label)
+        slides.append(
+            {
+                "type": "section",
+                "block_id": block.order_key,
+                "section": "intro",
+                "section_title": title,
+                "step_id": "intro",
+                "html": html,
+                **talk_meta,
+            }
+        )
+        log.ok("слайд: вступление")
+
+    demo_intro_html = ""
+    demo_section_seen = False
+
+    for section_title, content in block.sections:
+        key = section_title.strip().lower()
+
+        if key == "демо":
+            demo_section_seen = True
+            demo_intro_html = section_to_html(content, ctx, block_label=block_label)
+            media_files = list_unreferenced_media(block.folder, ctx.copied)
+            total = len(media_files)
+
+            if total == 0:
+                if demo_intro_html.strip():
+                    slides.append(
+                        {
+                            "type": "section",
+                            "block_id": block.order_key,
+                            "section": key,
+                            "section_title": section_title,
+                            "step_id": _step_id(section_title),
+                            "html": demo_intro_html,
+                            **talk_meta,
+                        }
+                    )
+                    log.ok(f"слайд: {section_title}")
+                continue
+
+            for idx, media in enumerate(media_files, start=1):
+                rel = copy_asset(media, asset_dir, log)
+                ctx.copied[media.name.lower()] = rel
+                mime = "video" if media.suffix.lower() in VIDEO_EXTS else "image"
+                slides.append(
+                    {
+                        "type": "demo",
+                        "block_id": block.order_key,
+                        "src": rel,
+                        "mime": mime,
+                        "index": idx,
+                        "total": total,
+                        "step_id": f"демо-{idx}",
+                        "intro_html": demo_intro_html if idx == 1 else "",
+                        **talk_meta,
+                    }
+                )
+                log.ok(f"слайд: Демо {idx}/{total}")
+            continue
+
+        html = section_to_html(content, ctx, block_label=block_label)
+        slides.append(
+            {
+                "type": "section",
+                "block_id": block.order_key,
+                "section": key,
+                "section_title": section_title,
+                "step_id": _step_id(section_title),
+                "html": html,
+                **talk_meta,
+            }
+        )
+        log.ok(f"слайд: {section_title}")
+
+    if not demo_section_seen:
+        leftover = list_unreferenced_media(block.folder, ctx.copied)
+        if leftover:
+            log.warn(
+                f"{block_label}: {len(leftover)} медиафайл(ов) не использованы "
+                f"(добавьте ## Демо или ссылки в MD): "
+                + ", ".join(p.name for p in leftover)
+            )
+
+    return slides
+
+
 def build_slides(blocks: list[Block], log: BuildLog) -> list[dict]:
     slides: list[dict] = []
 
     for block in blocks:
-        asset_dir = OUT_DIR / "assets" / block.order_key
         title = block.meta.get("title", block.order_key)
         author = block.meta.get("author", "")
         type_label = _block_type_label(block.block_type)
@@ -330,148 +572,16 @@ def build_slides(blocks: list[Block], log: BuildLog) -> list[dict]:
         log.ok(head)
 
         if block.block_type == "welcome":
-            videos = list_videos(block.folder)
-            if videos:
-                log.item(f"фон: {len(videos)} видео")
-                video_urls = [copy_asset(v, asset_dir, log) for v in videos]
-            else:
-                log.warn("нет видео — создаю заглушки")
-                placeholders = generate_placeholder_videos(asset_dir, log)
-                video_urls = [p.relative_to(OUT_DIR).as_posix() for p in placeholders]
-            slides.append(
-                {
-                    "type": "welcome",
-                    "title": title,
-                    "subtitle": block.meta.get("subtitle", ""),
-                    "videos": video_urls,
-                    "block_id": block.order_key,
-                }
-            )
+            slides.append(build_welcome_or_questions(block, log, "welcome"))
             log.ok("слайд: заглушка")
             continue
 
         if block.block_type == "questions":
-            videos = list_videos(block.folder)
-            if videos:
-                log.item(f"фон: {len(videos)} видео")
-                video_urls = [copy_asset(v, asset_dir, log) for v in videos]
-            else:
-                log.warn("нет видео — создаю заглушки")
-                placeholders = generate_placeholder_videos(asset_dir, log)
-                video_urls = [p.relative_to(OUT_DIR).as_posix() for p in placeholders]
-            body_html = md_to_html(block.sections.get("текст", ""))
-            body_html = rewrite_asset_urls(body_html, block.asset_prefix)
-            slides.append(
-                {
-                    "type": "questions",
-                    "title": title,
-                    "subtitle": block.meta.get("subtitle", ""),
-                    "html": body_html,
-                    "videos": video_urls,
-                    "block_id": block.order_key,
-                }
-            )
+            slides.append(build_welcome_or_questions(block, log, "questions"))
             log.ok("слайд: общие вопросы")
             continue
 
-        refs = referenced_media(block.raw_md)
-        talk_meta = {
-            "block_title": title,
-            "author": author,
-        }
-
-        section_names = ("проблема", "инструменты", "решение")
-        for key in section_names:
-            section_title = "Вопросы?" if key == "вопросы?" else key.capitalize()
-            content = block.sections.get(key, "")
-            html = md_to_html(content)
-            html = rewrite_asset_urls(html, block.asset_prefix)
-            slides.append(
-                {
-                    "type": "section",
-                    "block_id": block.order_key,
-                    "section": key,
-                    "section_title": section_title,
-                    "step_id": key,
-                    "html": html,
-                    **talk_meta,
-                }
-            )
-            log.ok(f"слайд: {section_title}")
-
-        for name in refs:
-            src = block.folder / name
-            if src.exists():
-                copy_asset(src, asset_dir, log)
-
-        demo_intro = block.sections.get("демо", "")
-        demo_intro_html = rewrite_asset_urls(
-            md_to_html(demo_intro), block.asset_prefix
-        )
-
-        demo_files = [
-            p
-            for p in list_block_media(block.folder, exclude_names={"slide.md"})
-            if p.name.lower() not in refs and p.suffix.lower() in DEMO_EXTS
-        ]
-        demo_files.sort(
-            key=lambda p: (0 if p.name.lower().startswith("demo-") else 1, p.name.lower())
-        )
-
-        total_demo = len(demo_files)
-        if total_demo == 0:
-            log.warn("нет файлов demo-* — добавьте видео/фото в папку блока")
-
-        for idx, media in enumerate(demo_files, start=1):
-            rel = copy_asset(media, asset_dir, log)
-            mime = "video" if media.suffix.lower() in VIDEO_EXTS else "image"
-            slides.append(
-                {
-                    "type": "demo",
-                    "block_id": block.order_key,
-                    "src": rel,
-                    "mime": mime,
-                    "index": idx,
-                    "total": total_demo,
-                    "step_id": f"демо-{idx}",
-                    "intro_html": demo_intro_html if idx == 1 else "",
-                    **talk_meta,
-                }
-            )
-            log.ok(f"слайд: Демо {idx}/{total_demo}")
-
-        # вопросы — после демо
-        key = "вопросы?"
-        content = block.sections.get(key, "")
-        html = md_to_html(content)
-        html = rewrite_asset_urls(html, block.asset_prefix)
-        slides.append(
-            {
-                "type": "section",
-                "block_id": block.order_key,
-                "section": key,
-                "section_title": "Вопросы?",
-                "step_id": key,
-                "html": html,
-                **talk_meta,
-            }
-        )
-        log.ok("слайд: Вопросы?")
-
-        if total_demo == 0 and demo_intro_html:
-            slides.append(
-                {
-                    "type": "demo",
-                    "block_id": block.order_key,
-                    "src": "",
-                    "mime": "text",
-                    "index": 1,
-                    "total": 1,
-                    "step_id": "демо-1",
-                    "intro_html": demo_intro_html,
-                    **talk_meta,
-                }
-            )
+        slides.extend(build_talk_slides(block, log))
 
     return slides
 

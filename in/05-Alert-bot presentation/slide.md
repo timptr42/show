@@ -1,6 +1,6 @@
 ---
 title: "Отчётные скрипты по партнёрам"
-author: "CPL · Alert-bot"
+author: "Столяров Сергей"
 type: talk
 ---
 

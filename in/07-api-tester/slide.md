@@ -1,8 +1,7 @@
 ---
 title: "API Tester"
-author: "Команда · локальное тестирование REST API"
+author: "Якубов Исмаил"
 type: talk
-size: 16:9
 ---
 
 # API Tester
