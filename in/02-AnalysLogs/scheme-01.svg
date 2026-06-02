@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="820" viewBox="0 0 1400 820" role="img" aria-labelledby="title desc">
+  <title id="title">Инфографика процесса AnalysLogs</title>
+  <desc id="desc">Команда передаёт партнёру тест-кейсы и HTML-форму, партнёр проходит тестирование и отправляет результат, команда запускает автоматическую проверку и получает отчёты</desc>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M2,2 L10,6 L2,10 Z" fill="#2f6f73"/>
+    </marker>
+    <style>
+      .bg { fill: #f7faf8; }
+      .card { fill: #ffffff; stroke: #6f8f8a; stroke-width: 2; rx: 18; }
+      .accent { fill: #e6f2ef; stroke: #2f6f73; stroke-width: 2; rx: 18; }
+      .result { fill: #fff8e7; stroke: #b28a2c; stroke-width: 2; rx: 18; }
+      .badge { fill: #2f6f73; }
+      .badgeText { font: 700 25px Arial, sans-serif; fill: #ffffff; text-anchor: middle; dominant-baseline: central; }
+      .h1 { font: 700 34px Arial, sans-serif; fill: #193735; text-anchor: middle; }
+      .sub { font: 21px Arial, sans-serif; fill: #4f6360; text-anchor: middle; }
+      .head { font: 700 23px Arial, sans-serif; fill: #193735; text-anchor: middle; }
+      .body { font: 19px Arial, sans-serif; fill: #314846; text-anchor: middle; }
+      .small { font: 17px Arial, sans-serif; fill: #536764; text-anchor: middle; }
+      .label { font: 700 18px Arial, sans-serif; fill: #2f6f73; text-anchor: middle; }
+      .outHead { font: 700 22px Arial, sans-serif; fill: #5d4512; text-anchor: middle; }
+      .outText { font: 18px Arial, sans-serif; fill: #604d20; text-anchor: middle; }
+      .idea { font: 700 22px Arial, sans-serif; fill: #193735; text-anchor: middle; }
+      .arrow { fill: none; stroke: #2f6f73; stroke-width: 4; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1400" height="820"/>
+
+  <text class="h1" x="700" y="62">AnalysLogs: автоматическая проверка партнёрского тестирования</text>
+  <text class="sub" x="700" y="100">От передачи тест-кейсов партнёру до двух готовых отчётов после проверки логов</text>
+
+  <rect class="card" x="50" y="150" width="250" height="250"/>
+  <circle class="badge" cx="93" cy="194" r="27"/>
+  <text class="badgeText" x="93" y="194">1</text>
+  <text class="head" x="185" y="202">Передаём</text>
+  <text class="body" x="175" y="252">Партнёр получает</text>
+  <text class="body" x="175" y="280">набор тест-кейсов</text>
+  <text class="body" x="175" y="308">и HTML-страницу</text>
+  <text class="small" x="175" y="362">Единый формат входа</text>
+
+  <path class="arrow" d="M318 275 H365"/>
+
+  <rect class="accent" x="385" y="150" width="250" height="250"/>
+  <circle class="badge" cx="428" cy="194" r="27"/>
+  <text class="badgeText" x="428" y="194">2</text>
+  <text class="head" x="525" y="202">Тестируем</text>
+  <text class="body" x="510" y="252">Партнёр проходит</text>
+  <text class="body" x="510" y="280">интеграционные</text>
+  <text class="body" x="510" y="308">сценарии</text>
+  <text class="small" x="510" y="362">Логи собираются</text>
+  <text class="small" x="510" y="386">сразу по кейсам</text>
+
+  <path class="arrow" d="M653 275 H700"/>
+
+  <rect class="card" x="720" y="150" width="250" height="250"/>
+  <circle class="badge" cx="763" cy="194" r="27"/>
+  <text class="badgeText" x="763" y="194">3</text>
+  <text class="head" x="860" y="202">Заполняем</text>
+  <text class="body" x="845" y="248">Форма ведёт</text>
+  <text class="body" x="845" y="276">по полям</text>
+  <text class="body" x="845" y="304">и показывает</text>
+  <text class="body" x="845" y="332">минимальные</text>
+  <text class="body" x="845" y="360">проверки</text>
+  <text class="small" x="845" y="388">Меньше ошибок</text>
+
+  <path class="arrow" d="M988 275 H1035"/>
+
+  <rect class="accent" x="1055" y="150" width="250" height="250"/>
+  <circle class="badge" cx="1098" cy="194" r="27"/>
+  <text class="badgeText" x="1098" y="194">4</text>
+  <text class="head" x="1210" y="202">Отправляем</text>
+  <text class="body" x="1180" y="248">Партнёр сохраняет</text>
+  <text class="body" x="1180" y="276">результат</text>
+  <text class="body" x="1180" y="304">и передаёт его</text>
+  <text class="body" x="1180" y="332">команде</text>
+  <text class="small" x="1180" y="372">Один файл вместо</text>
+  <text class="small" x="1180" y="396">разрозненных логов</text>
+
+  <path class="arrow" d="M1220 418 V575 H1168"/>
+
+  <rect class="result" x="135" y="470" width="540" height="250"/>
+  <text class="outHead" x="405" y="520">На выходе — два понятных результата</text>
+
+  <rect class="accent" x="175" y="555" width="210" height="135"/>
+  <text class="label" x="280" y="595">Партнёру</text>
+  <text class="outText" x="280" y="627">краткая сводка:</text>
+  <text class="outText" x="280" y="655">что пройти</text>
+  <text class="outText" x="280" y="683">и что исправить</text>
+
+  <rect class="card" x="425" y="555" width="220" height="135"/>
+  <text class="label" x="535" y="595">Команде</text>
+  <text class="outText" x="535" y="627">внутренний отчёт:</text>
+  <text class="outText" x="535" y="655">детали проверок</text>
+  <text class="outText" x="535" y="683">и причины ошибок</text>
+
+  <rect class="card" x="850" y="470" width="300" height="210"/>
+  <circle class="badge" cx="895" cy="515" r="27"/>
+  <text class="badgeText" x="895" y="515">5</text>
+  <text class="head" x="1000" y="523">Проверяем</text>
+  <text class="body" x="1000" y="575">Команда запускает</text>
+  <text class="body" x="1000" y="603">автоматическую</text>
+  <text class="body" x="1000" y="631">проверку AnalysLogs</text>
+  <text class="small" x="1000" y="662">Правила берутся из чек-листа</text>
+
+  <path class="arrow" d="M835 575 H695"/>
+
+  <text class="idea" x="700" y="758">
+    <tspan x="700" dy="0">Основная идея: меньше ручной сверки и быстрее обратная связь партнёру</tspan>
+    <tspan x="700" dy="30">прозрачнее статус интеграционного тестирования</tspan>
+  </text>
+</svg>

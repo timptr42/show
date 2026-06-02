@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 200" font-family="Segoe UI, Arial, sans-serif" font-size="14">
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#555"/>
+    </marker>
+  </defs>
+  <rect x="10" y="70" width="130" height="60" rx="8" fill="#e8f4fc" stroke="#2b7bbf" stroke-width="2"/>
+  <text x="75" y="95" text-anchor="middle" font-weight="600">Вопрос</text>
+  <text x="75" y="115" text-anchor="middle" fill="#444">текст / лог</text>
+  <line x1="140" y1="100" x2="175" y2="100" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="180" y="70" width="150" height="60" rx="8" fill="#fff8e6" stroke="#c9a227" stroke-width="2"/>
+  <text x="255" y="95" text-anchor="middle" font-weight="600">GOLEM</text>
+  <text x="255" y="115" text-anchor="middle" fill="#444">находит ID</text>
+  <line x1="330" y1="100" x2="365" y2="100" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="370" y="70" width="130" height="60" rx="8" fill="#eef8ee" stroke="#3a8f3a" stroke-width="2"/>
+  <text x="435" y="95" text-anchor="middle" font-weight="600">База</text>
+  <text x="435" y="115" text-anchor="middle" fill="#444">проверка</text>
+  <line x1="500" y1="100" x2="535" y2="100" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="540" y="70" width="170" height="60" rx="8" fill="#f3e8fc" stroke="#7b3fbf" stroke-width="2"/>
+  <text x="625" y="95" text-anchor="middle" font-weight="600">Ответ</text>
+  <text x="625" y="115" text-anchor="middle" fill="#444">сводка по фактам</text>
+</svg>

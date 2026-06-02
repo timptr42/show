@@ -1,5 +1,5 @@
 ---
-title: "Вайбкодинг в команде"
-subtitle: "CPL · май 2026"
+title: "AI Fun"
+subtitle: "Команда партнерской интеграции"
 type: welcome
 ---
