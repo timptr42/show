@@ -20,6 +20,7 @@
       --slide-margin: 5%;
       --radius: 6px;
       --shadow: 0 8px 28px rgba(18, 18, 18, 0.08);
+      --content-pad-x: clamp(20px, 3vw, 52px);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -184,7 +185,7 @@
     /* —— шапка проекта + шаги —— */
     .talk-header {
       flex: 0 0 auto;
-      padding: 0 0 1vh;
+      padding: 0 var(--content-pad-x) 1vh;
       border-bottom: 3px solid var(--fg);
       background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, transparent 100%),
@@ -195,11 +196,11 @@
     .talk-header::after {
       content: "";
       position: absolute;
-      left: 0;
+      left: var(--content-pad-x);
       bottom: -3px;
       width: min(28%, 220px);
       height: 3px;
-      background: linear-gradient(90deg, var(--accent), var(--accent-soft));
+      background: var(--fg);
     }
 
     .talk-identity {
@@ -225,7 +226,7 @@
     .project-author {
       font-size: clamp(15px, 1.75vw, 26px);
       font-weight: 600;
-      color: var(--muted);
+      color: var(--fg);
       white-space: nowrap;
       flex: 0 0 auto;
     }
@@ -235,7 +236,7 @@
       margin: 0.3em 0 0;
       font-size: clamp(13px, 1.5vw, 24px);
       font-weight: 700;
-      color: var(--accent);
+      color: var(--fg);
       letter-spacing: 0.02em;
       line-height: 1.2;
       text-transform: none;
@@ -251,7 +252,7 @@
     .slide-body {
       flex: 0 0 auto;
       overflow: hidden;
-      padding-top: 1vh;
+      padding: 1.2vh var(--content-pad-x) 0.6vh;
       font-size: clamp(15px, 1.75vw, 26px);
       line-height: 1.48;
       max-width: 100%;
@@ -260,15 +261,21 @@
 
     .slide-body ul, .slide-body ol { margin: 0.55em 0 0.55em 1.15em; }
     .slide-body li { margin: 0.3em 0; }
-    .slide-body li::marker { color: var(--accent); }
+    .slide-body li::marker { color: var(--fg); }
     .slide-body p { margin: 0.45em 0; }
     .slide-body strong { font-weight: 800; color: var(--fg); }
+    .slide-body a {
+      color: var(--fg);
+      text-decoration: underline;
+      text-underline-offset: 0.12em;
+    }
     .slide-body code {
       font-size: 0.92em;
       padding: 0.08em 0.35em;
       border-radius: 4px;
-      background: var(--accent-dim);
-      border: 1px solid rgba(0, 87, 255, 0.18);
+      background: rgba(18, 18, 18, 0.06);
+      border: 1px solid var(--line);
+      color: var(--fg);
     }
 
     .slide-body img,
@@ -370,16 +377,26 @@
 
     .demo-intro {
       flex: 0 0 auto;
-      color: var(--muted);
+      color: var(--fg);
       font-size: clamp(13px, 1.45vw, 22px);
       line-height: 1.38;
       margin-bottom: 0.7vh;
       overflow: hidden;
+      padding: 0 var(--content-pad-x);
     }
 
     .demo-intro:empty { display: none; }
 
     .demo-intro p { margin: 0.35em 0; }
+    .demo-intro li::marker { color: var(--fg); }
+    .demo-intro a { color: var(--fg); text-decoration: underline; }
+    .demo-intro code {
+      color: var(--fg);
+      background: rgba(18, 18, 18, 0.06);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: 0.08em 0.35em;
+    }
 
     .demo-media {
       flex: 1 1 0;
