@@ -1,6 +1,5 @@
 ---
-title: "Вопросы?"
-subtitle: "Спасибо!"
+title: "?"
 type: questions
 ---
 

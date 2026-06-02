@@ -212,7 +212,7 @@
     }
 
     .project-title {
-      font-size: clamp(24px, 3.35vw, 46px);
+      font-size: clamp(20px, 2.85vw, 38px);
       font-weight: 900;
       line-height: 1.06;
       letter-spacing: -0.025em;
@@ -224,7 +224,7 @@
     }
 
     .project-author {
-      font-size: clamp(15px, 1.75vw, 26px);
+      font-size: clamp(13px, 1.5vw, 22px);
       font-weight: 600;
       color: var(--fg);
       white-space: nowrap;
@@ -234,7 +234,7 @@
     .talk-step {
       display: block;
       margin: 0.3em 0 0;
-      font-size: clamp(13px, 1.5vw, 24px);
+      font-size: clamp(11px, 1.25vw, 20px);
       font-weight: 700;
       color: var(--fg);
       letter-spacing: 0.02em;
@@ -253,7 +253,7 @@
       flex: 0 0 auto;
       overflow: hidden;
       padding: 1.2vh var(--content-pad-x) 0.6vh;
-      font-size: clamp(15px, 1.75vw, 26px);
+      font-size: clamp(13px, 1.5vw, 22px);
       line-height: 1.48;
       max-width: 100%;
       color: var(--fg);
@@ -358,6 +358,28 @@
     .slide-body th { background: var(--fg); color: var(--bg); font-weight: 700; }
     .slide-body tr:nth-child(even) td { background: rgba(255, 255, 255, 0.45); }
 
+    /* —— слайд «?» (Q&A) —— */
+    .slide.qa {
+      background:
+        radial-gradient(120% 80% at 50% 0%, var(--accent-dim) 0%, transparent 55%),
+        linear-gradient(165deg, var(--bg) 0%, var(--bg-tint) 100%);
+    }
+
+    .slide-qa-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .slide-qa-mark {
+      font-size: clamp(96px, 24vw, 360px);
+      font-weight: 900;
+      line-height: 1;
+      color: var(--fg);
+      letter-spacing: -0.04em;
+      user-select: none;
+    }
+
     /* —— демо (тот же светлый стиль, что и content) —— */
     .slide.demo {
       background:
@@ -378,7 +400,7 @@
     .demo-intro {
       flex: 0 0 auto;
       color: var(--fg);
-      font-size: clamp(13px, 1.45vw, 22px);
+      font-size: clamp(11px, 1.25vw, 18px);
       line-height: 1.38;
       margin-bottom: 0.7vh;
       overflow: hidden;
@@ -489,7 +511,7 @@
     }
 
     .cinematic h1 {
-      font-size: clamp(26px, 4.2vw, 62px);
+      font-size: clamp(22px, 3.6vw, 54px);
       font-weight: 900;
       line-height: 1.08;
       margin-bottom: 0.2em;
@@ -497,10 +519,36 @@
     }
 
     .cinematic .subtitle {
-      font-size: clamp(16px, 1.9vw, 28px);
+      font-size: clamp(14px, 1.65vw, 24px);
       font-weight: 500;
       color: #e8e8e8;
       text-shadow: 0 1px 12px rgba(0, 0, 0, 0.35);
+    }
+
+    .cinematic-mark {
+      font-size: clamp(120px, 28vw, 420px);
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      color: #fff;
+      text-shadow: 0 4px 32px rgba(0, 0, 0, 0.5);
+    }
+
+    .cinematic-mark-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+    }
+
+    .slide.cinematic-qa .cinematic-banner {
+      top: var(--slide-margin);
+      left: var(--slide-margin);
+      right: var(--slide-margin);
+      bottom: calc(var(--bar-h) + var(--slide-margin));
+      border-bottom: none;
+      background: rgba(8, 8, 14, 0.52);
     }
 
     .hint {
@@ -696,7 +744,7 @@
       el.className = 'slide';
       el.dataset.index = String(i);
 
-      if (data.type === 'welcome' || data.type === 'questions') {
+      if (data.type === 'welcome') {
         el.classList.add('cinematic');
         el.innerHTML = `
           <div class="bg-video-stack" aria-hidden="true">
@@ -711,6 +759,33 @@
           </div>
         `;
         el.dataset.videos = JSON.stringify(data.videos || []);
+        return el;
+      }
+
+      if (data.type === 'questions') {
+        el.classList.add('cinematic', 'cinematic-qa');
+        el.innerHTML = `
+          <div class="bg-video-stack" aria-hidden="true">
+            <video class="bg-video bg-video-a" muted playsinline preload="auto"></video>
+            <video class="bg-video bg-video-b" muted playsinline preload="auto"></video>
+          </div>
+          <div class="cinematic-banner">
+            <div class="cinematic-mark-wrap">
+              <p class="cinematic-mark" aria-label="Вопросы">?</p>
+            </div>
+          </div>
+        `;
+        el.dataset.videos = JSON.stringify(data.videos || []);
+        return el;
+      }
+
+      if (data.type === 'qa') {
+        el.classList.add('qa');
+        el.innerHTML = `
+          <div class="slide-margin-box slide-qa-box">
+            <p class="slide-qa-mark" aria-label="Вопросы">?</p>
+          </div>
+        `;
         return el;
       }
 
@@ -1007,7 +1082,11 @@
       progressFill.style.width = (total ? ((index + 1) / total) * 100 : 0) + '%';
 
       let label = current.block_title || current.title || 'Выступление';
-      if (current.section_title) label += ' — ' + current.section_title;
+      if (current.type === 'qa') {
+        label += ' — ?';
+      } else if (current.section_title) {
+        label += ' — ' + current.section_title;
+      }
       if (current.type === 'demo') label += ' · демо ' + current.index;
       progressLabel.textContent = label;
       progressCount.textContent = (index + 1) + ' / ' + total;

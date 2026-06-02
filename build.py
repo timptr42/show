@@ -530,6 +530,11 @@ def _step_id(title: str) -> str:
     return title.strip().lower()
 
 
+def is_questions_section(section_key: str) -> bool:
+    key = section_key.strip().lower().rstrip("?").strip()
+    return key in ("вопросы", "questions")
+
+
 def build_welcome_or_questions(
     block: Block, log: BuildLog, slide_type: str
 ) -> dict:
@@ -554,17 +559,6 @@ def build_welcome_or_questions(
         "videos": video_urls,
         "block_id": block.order_key,
     }
-
-    if slide_type == "questions":
-        text_key = "текст"
-        for section_title, content in block.sections:
-            if section_title.strip().lower() == text_key:
-                payload["html"] = section_to_html(
-                    content, ctx, block_label=f"Блок {block.order_key}"
-                )
-                break
-        else:
-            payload["html"] = ""
 
     return payload
 
@@ -645,6 +639,18 @@ def build_talk_slides(block: Block, log: BuildLog) -> list[dict]:
                     }
                 )
                 log.ok(f"слайд: Демо {idx}/{total}")
+            continue
+
+        if is_questions_section(key):
+            slides.append(
+                {
+                    "type": "qa",
+                    "block_id": block.order_key,
+                    "step_id": _step_id(section_title),
+                    **talk_meta,
+                }
+            )
+            log.ok(f"слайд: {section_title}")
             continue
 
         html = section_to_html(content, ctx, block_label=block_label)
