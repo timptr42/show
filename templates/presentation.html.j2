@@ -15,7 +15,7 @@
       --overlay: rgba(8, 8, 12, 0.68);
       --font: "Segoe UI", system-ui, -apple-system, sans-serif;
       --bar-h: 72px;
-      --demo-head-h: 10vh;
+      --slide-margin: 5%;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -53,10 +53,40 @@
       z-index: 2;
     }
 
+    /* 5% поля от края экрана (над progress-bar) */
+    .slide-margin-box {
+      position: absolute;
+      top: var(--slide-margin);
+      left: var(--slide-margin);
+      right: var(--slide-margin);
+      bottom: calc(var(--bar-h) + var(--slide-margin));
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .slide-fit-host {
+      flex: 1 1 auto;
+      min-height: 0;
+      width: 100%;
+      overflow: hidden;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    .slide-fit-content {
+      width: 100%;
+      max-width: 100%;
+      transform-origin: top center;
+      will-change: transform;
+    }
+
     /* —— шапка проекта + шаги —— */
     .talk-header {
       flex: 0 0 auto;
-      padding: 1.4vh 3.5vw 1.1vh;
+      padding: 0 0 1.1vh;
       border-bottom: 4px solid var(--fg);
       background: var(--bg);
     }
@@ -104,13 +134,12 @@
     }
 
     .slide-body {
-      flex: 1 1 auto;
-      min-height: 0;
-      padding: 1.6vh 3.5vw 11vh;
-      overflow: auto;
-      font-size: clamp(20px, 2.1vw, 32px);
+      flex: 0 0 auto;
+      overflow: hidden;
+      padding-top: 1.2vh;
+      font-size: clamp(18px, 2.1vw, 32px);
       line-height: 1.45;
-      max-width: 1280px;
+      max-width: 100%;
     }
 
     .slide-body ul, .slide-body ol { margin: 0.6em 0 0.6em 1.2em; }
@@ -121,8 +150,10 @@
     .slide-body img,
     .slide-body svg {
       display: block;
-      max-width: min(96vw, 1100px);
-      max-height: 58vh;
+      max-width: 100%;
+      max-height: 42vh;
+      height: auto;
+      width: auto;
       margin: 0.8em auto;
       border: 2px solid var(--fg);
       background: #fff;
@@ -143,17 +174,16 @@
       min-height: 0;
       display: flex;
       flex-direction: column;
-      padding: 1vh 3.5vw 11vh;
+      overflow: hidden;
       max-width: 100%;
     }
 
     .demo-intro {
       flex: 0 0 auto;
       color: var(--muted);
-      font-size: clamp(17px, 1.75vw, 26px);
+      font-size: clamp(15px, 1.75vw, 26px);
       line-height: 1.35;
       margin-bottom: 0.8vh;
-      max-height: 10vh;
       overflow: hidden;
     }
 
@@ -173,10 +203,10 @@
     .demo-media img,
     .demo-media video {
       display: block;
-      width: 100%;
-      height: 100%;
-      max-width: min(96vw, 1280px);
-      max-height: calc(100vh - var(--bar-h) - var(--demo-head-h) - 2vh);
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      max-height: 100%;
       object-fit: contain;
       object-position: center center;
       border: 2px solid var(--fg);
@@ -230,17 +260,18 @@
 
     .cinematic-banner {
       position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
+      top: var(--slide-margin);
+      left: var(--slide-margin);
+      right: var(--slide-margin);
       z-index: 2;
       background: rgba(8, 8, 14, 0.78);
       border-bottom: 3px solid rgba(255, 255, 255, 0.15);
-      padding: 2.2vh 5vw 2.4vh;
+      padding: 2.2vh 2vw 2.4vh;
       display: flex;
       justify-content: center;
       align-items: center;
       text-align: center;
+      overflow: hidden;
     }
 
     .cinematic-content {
@@ -404,10 +435,16 @@
           ? `Демо ${data.index} / ${data.total}`
           : 'Демо';
         el.innerHTML = `
-          ${renderTalkHeader(data, demoTitle)}
-          <div class="slide-body demo-body">
-            <div class="demo-intro">${data.intro_html || ''}</div>
-            <div class="demo-media">${media}</div>
+          <div class="slide-margin-box">
+            <div class="slide-fit-host">
+              <div class="slide-fit-content">
+                ${renderTalkHeader(data, demoTitle)}
+                <div class="slide-body demo-body">
+                  <div class="demo-intro">${data.intro_html || ''}</div>
+                  <div class="demo-media">${media}</div>
+                </div>
+              </div>
+            </div>
           </div>
         `;
         return el;
@@ -415,14 +452,80 @@
 
       el.classList.add('content');
       el.innerHTML = `
-        ${renderTalkHeader(data, data.section_title || '')}
-        <div class="slide-body">${data.html || ''}</div>
+        <div class="slide-margin-box">
+          <div class="slide-fit-host">
+            <div class="slide-fit-content">
+              ${renderTalkHeader(data, data.section_title || '')}
+              <div class="slide-body">${data.html || ''}</div>
+            </div>
+          </div>
+        </div>
       `;
       return el;
     }
 
     function buildDeck() {
       SLIDES.forEach((s, i) => deck.appendChild(renderSlide(s, i)));
+    }
+
+    /** Подгонка контента слайда в область с 5% полями без прокрутки. */
+    function fitSlideContent(slideEl) {
+      const host = slideEl.querySelector('.slide-fit-host');
+      const content = slideEl.querySelector('.slide-fit-content');
+      if (host && content) {
+        content.style.transform = 'none';
+
+        const boxW = host.clientWidth;
+        const boxH = host.clientHeight;
+        if (boxW <= 0 || boxH <= 0) return;
+
+        const naturalH = content.scrollHeight;
+        const naturalW = content.scrollWidth;
+        const scale = Math.min(1, boxH / naturalH, boxW / naturalW);
+
+        if (scale < 0.999) {
+          content.style.transform = `scale(${scale})`;
+          content.style.transformOrigin = 'top center';
+        }
+        return;
+      }
+
+      const banner = slideEl.querySelector('.cinematic-banner');
+      const cinematic = slideEl.querySelector('.cinematic-content');
+      if (!banner || !cinematic) return;
+
+      cinematic.style.transform = 'none';
+      const title = cinematic.querySelector('h1');
+      const subtitle = cinematic.querySelector('.subtitle');
+      if (title) title.style.fontSize = '';
+      if (subtitle) subtitle.style.fontSize = '';
+
+      const maxH = banner.clientHeight;
+      if (maxH <= 0) return;
+
+      let scale = 1;
+      const minScale = 0.55;
+      cinematic.style.transform = 'scale(1)';
+
+      while (cinematic.scrollHeight > maxH && scale > minScale) {
+        scale *= 0.92;
+        cinematic.style.transform = `scale(${scale})`;
+        cinematic.style.transformOrigin = 'top center';
+      }
+    }
+
+    function fitAllSlides() {
+      deck.querySelectorAll('.slide').forEach((slide) => fitSlideContent(slide));
+    }
+
+    let fitScheduled = false;
+    function scheduleFit() {
+      if (fitScheduled) return;
+      fitScheduled = true;
+      requestAnimationFrame(() => {
+        fitScheduled = false;
+        fitAllSlides();
+      });
     }
 
     function stopBgVideo() {
@@ -618,6 +721,7 @@
       if (current.type === 'demo') label += ' · демо ' + current.index;
       progressLabel.textContent = label;
       progressCount.textContent = (index + 1) + ' / ' + total;
+      scheduleFit();
     }
 
     function go(delta) {
@@ -652,6 +756,14 @@
 
     buildDeck();
     updateUI();
+    scheduleFit();
+
+    window.addEventListener('resize', scheduleFit);
+
+    deck.querySelectorAll('.slide img, .slide video').forEach((media) => {
+      media.addEventListener('load', scheduleFit);
+      media.addEventListener('loadedmetadata', scheduleFit);
+    });
   </script>
 </body>
 </html>
