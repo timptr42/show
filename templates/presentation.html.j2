@@ -118,6 +118,59 @@
       max-width: 100%;
       max-height: 100%;
       object-fit: contain;
+      cursor: zoom-in;
+    }
+
+    /* —— полноэкранный просмотр изображений —— */
+    .media-viewer {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(6, 6, 10, 0.94);
+      padding: 2vh 2vw;
+    }
+
+    .media-viewer[hidden] {
+      display: none !important;
+    }
+
+    .media-viewer-close {
+      position: absolute;
+      top: 1.2vh;
+      right: 1.5vw;
+      z-index: 1;
+      width: 48px;
+      height: 48px;
+      border: 2px solid rgba(255, 255, 255, 0.35);
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.45);
+      color: #fff;
+      font-size: 28px;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .media-viewer-close:hover {
+      border-color: #fff;
+      background: rgba(0, 0, 0, 0.65);
+    }
+
+    .media-viewer-img,
+    .media-viewer-video {
+      max-width: 96vw;
+      max-height: 92vh;
+      object-fit: contain;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      background: #111;
+    }
+
+    .media-viewer-video {
+      width: auto;
+      height: auto;
+      aspect-ratio: 16 / 9;
     }
 
     /* —— шапка проекта + шаги —— */
@@ -196,6 +249,38 @@
       margin: 0.8em auto;
       border: 2px solid var(--fg);
       background: #fff;
+      cursor: zoom-in;
+    }
+
+    .slide-body .media-row {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      gap: clamp(12px, 2vw, 28px);
+      margin: 0.6em 0;
+      width: 100%;
+      align-items: stretch;
+      justify-content: center;
+    }
+
+    .slide-body .media-row .media-cell {
+      flex: 1 1 0;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .slide-body .media-row .media-cell img {
+      margin: 0;
+      width: 100%;
+      height: auto;
+      max-height: min(50vh, 540px);
+      object-fit: contain;
+    }
+
+    .slide-body .media-row:has(.media-cell:only-child) .media-cell {
+      flex: 0 1 72%;
     }
 
     .slide-body video {
@@ -401,6 +486,12 @@
     </div>
   </div>
 
+  <div id="media-viewer" class="media-viewer" hidden aria-hidden="true">
+    <button type="button" class="media-viewer-close" aria-label="Закрыть">&times;</button>
+    <img class="media-viewer-img" alt="" hidden>
+    <video class="media-viewer-video" controls playsinline hidden></video>
+  </div>
+
   <script>
     const SLIDES = {{ slides_json | safe }};
 
@@ -408,10 +499,65 @@
     const progressFill = document.getElementById('progress-fill');
     const progressLabel = document.getElementById('progress-label');
     const progressCount = document.getElementById('progress-count');
+    const mediaViewer = document.getElementById('media-viewer');
+    const mediaViewerImg = mediaViewer.querySelector('.media-viewer-img');
+    const mediaViewerVideo = mediaViewer.querySelector('.media-viewer-video');
+    const mediaViewerClose = mediaViewer.querySelector('.media-viewer-close');
 
     let index = 0;
     let wheelLocked = false;
     const BG_CROSSFADE_MS = 1000;
+
+    function isMediaViewerOpen() {
+      return !mediaViewer.hidden;
+    }
+
+    function closeMediaViewer() {
+      mediaViewer.hidden = true;
+      mediaViewer.setAttribute('aria-hidden', 'true');
+      mediaViewerVideo.pause();
+      mediaViewerVideo.removeAttribute('src');
+      mediaViewerVideo.load();
+      mediaViewerVideo.hidden = true;
+      mediaViewerImg.removeAttribute('src');
+      mediaViewerImg.hidden = true;
+    }
+
+    function openMediaViewer(src, kind) {
+      if (!src) return;
+      mediaViewer.hidden = false;
+      mediaViewer.setAttribute('aria-hidden', 'false');
+      if (kind === 'video') {
+        mediaViewerImg.hidden = true;
+        mediaViewerVideo.hidden = false;
+        mediaViewerVideo.src = src;
+      } else {
+        mediaViewerVideo.hidden = true;
+        mediaViewerImg.hidden = false;
+        mediaViewerImg.src = src;
+      }
+    }
+
+    function setupMediaViewer() {
+      deck.addEventListener('click', (e) => {
+        const img = e.target.closest('.slide-body img, .demo-media img, .demo-intro img');
+        if (img && deck.contains(img)) {
+          e.preventDefault();
+          e.stopPropagation();
+          openMediaViewer(img.currentSrc || img.src, 'img');
+        }
+      });
+
+      mediaViewerClose.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        closeMediaViewer();
+      });
+
+      mediaViewer.addEventListener('click', (e) => {
+        if (e.target === mediaViewer) closeMediaViewer();
+      });
+    }
 
     function escapeHtml(s) {
       return String(s)
@@ -773,6 +919,7 @@
     }
 
     document.addEventListener('wheel', (e) => {
+      if (isMediaViewerOpen()) return;
       if (Math.abs(e.deltaY) < 8) return;
       e.preventDefault();
       if (wheelLocked) return;
@@ -782,6 +929,13 @@
     }, { passive: false });
 
     document.addEventListener('keydown', (e) => {
+      if (isMediaViewerOpen()) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          closeMediaViewer();
+        }
+        return;
+      }
       if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
         e.preventDefault();
         go(1);
@@ -795,6 +949,7 @@
     });
 
     buildDeck();
+    setupMediaViewer();
     updateUI();
     scheduleFit();
 

@@ -422,10 +422,33 @@ def rewrite_html_assets(html: str, ctx: AssetContext, *, block_label: str) -> st
     return html
 
 
+_CONSECUTIVE_IMG_PARAS = re.compile(
+    r"(?:<p>\s*<img\s+[^>]*>\s*</p>\s*)+",
+    re.IGNORECASE,
+)
+_IMG_TAG = re.compile(r"(<img\s+[^>]*>)", re.IGNORECASE)
+
+
+def group_consecutive_images(html: str) -> str:
+    """Подряд идущие картинки — в строку слева направо (по две в ряд)."""
+
+    def repl(match: re.Match[str]) -> str:
+        imgs = _IMG_TAG.findall(match.group(0))
+        rows: list[str] = []
+        for i in range(0, len(imgs), 2):
+            chunk = imgs[i : i + 2]
+            cells = "".join(f'<div class="media-cell">{img}</div>' for img in chunk)
+            rows.append(f'<div class="media-row">{cells}</div>')
+        return "\n".join(rows)
+
+    return _CONSECUTIVE_IMG_PARAS.sub(repl, html)
+
+
 def section_to_html(content: str, ctx: AssetContext, *, block_label: str) -> str:
     normalized = normalize_media_bullets(content)
     html = md_to_html(normalized)
-    return rewrite_html_assets(html, ctx, block_label=block_label)
+    html = rewrite_html_assets(html, ctx, block_label=block_label)
+    return group_consecutive_images(html)
 
 
 def list_folder_videos(folder: Path) -> list[Path]:
