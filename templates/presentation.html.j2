@@ -100,14 +100,13 @@
     }
 
     .project-title {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: baseline;
-      gap: 0.35em 0.5em;
       font-size: clamp(28px, 4vw, 56px);
       font-weight: 900;
       line-height: 1.05;
       letter-spacing: -0.02em;
+    }
+
+    .talk-titles {
       flex: 1 1 auto;
       min-width: 0;
     }
@@ -121,11 +120,13 @@
     }
 
     .talk-step {
-      font-size: 0.72em;
-      font-weight: 800;
+      display: block;
+      margin: 0.35em 0 0;
+      font-size: clamp(16px, 1.85vw, 30px);
+      font-weight: 700;
       color: var(--muted);
       letter-spacing: 0.01em;
-      white-space: nowrap;
+      line-height: 1.2;
     }
 
     /* —— контентные слайды —— */
@@ -386,15 +387,15 @@
         ? `<p class="project-author">${escapeHtml(data.author)}</p>`
         : '';
       const step = sectionTitle
-        ? `<span class="talk-step">[${escapeHtml(sectionTitle.toLowerCase())}]</span>`
+        ? `<p class="talk-step">${escapeHtml(sectionTitle)}</p>`
         : '';
       return `
         <header class="talk-header">
           <div class="talk-identity">
-            <h1 class="project-title">
-              <span>${escapeHtml(data.block_title || '')}</span>
+            <div class="talk-titles">
+              <h1 class="project-title">${escapeHtml(data.block_title || '')}</h1>
               ${step}
-            </h1>
+            </div>
             ${author}
           </div>
         </header>
