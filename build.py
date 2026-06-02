@@ -245,6 +245,75 @@ def normalize_media_bullets(text: str) -> str:
     return "\n".join(lines)
 
 
+_MEDIA_REF_RE = re.compile(
+    r"\.(?:svg|png|jpe?g|gif|webp|mp4|webm|mov|m4v)$", re.IGNORECASE
+)
+
+
+def _is_media_filename(name: str) -> bool:
+    return bool(_MEDIA_REF_RE.search(name.strip()))
+
+
+def extract_demo_media(content: str) -> tuple[str, list[str]]:
+    """Из секции ## Демо: текст без медиа-строк и упорядоченные ссылки на файлы."""
+    intro_lines: list[str] = []
+    refs: list[str] = []
+
+    for line in content.splitlines():
+        stripped = line.strip()
+
+        img = re.search(r"!\[[^\]]*\]\(([^)]+)\)", stripped)
+        if img:
+            ref = img.group(1).strip().split()[0]
+            if _is_media_filename(ref):
+                refs.append(ref)
+                continue
+
+        video = re.search(r"<video[^>]+src=[\"']([^\"']+)[\"']", stripped, re.I)
+        if video:
+            refs.append(video.group(1).strip())
+            continue
+
+        bullet = re.match(r"^-\s+`?([^`\s]+)`?\s*$", stripped)
+        if bullet and _is_media_filename(bullet.group(1)):
+            refs.append(bullet.group(1).strip())
+            continue
+
+        intro_lines.append(line)
+
+    intro = "\n".join(intro_lines).strip()
+    return intro, refs
+
+
+def resolve_demo_files(
+    folder: Path, refs: list[str], copied: dict[str, str], log: BuildLog, block_label: str
+) -> list[Path]:
+    files: list[Path] = []
+    seen: set[str] = set()
+
+    for ref in refs:
+        src = resolve_media_path(folder, ref)
+        if src is None:
+            log.warn(f"{block_label}: в ## Демо не найден файл «{ref}»")
+            continue
+        key = src.name.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        files.append(src)
+
+    for path in list_unreferenced_media(folder, copied):
+        key = path.name.lower()
+        if key not in seen:
+            seen.add(key)
+            files.append(path)
+
+    files.sort(
+        key=lambda p: (0 if p.name.lower().startswith("demo-") else 1, p.name.lower())
+    )
+    return files
+
+
 def resolve_media_path(folder: Path, ref: str) -> Path | None:
     ref = ref.strip().split()[0]
     if ref.startswith(("http://", "https://", "data:", "#", "mailto:")):
@@ -367,6 +436,26 @@ def list_folder_videos(folder: Path) -> list[Path]:
     )
 
 
+def list_background_videos(block: Block, log: BuildLog) -> list[Path]:
+    """Фоновые ролики: из секции ## Фон в slide.md или все mp4 в каталоге."""
+    block_label = f"Блок {block.order_key}"
+    for section_title, content in block.sections:
+        if section_title.strip().lower() not in ("фон", "background"):
+            continue
+        _, refs = extract_demo_media(content)
+        files: list[Path] = []
+        for ref in refs:
+            src = resolve_media_path(block.folder, ref)
+            if src is None:
+                log.warn(f"{block_label}: в ## Фон не найден файл «{ref}»")
+                continue
+            files.append(src)
+        if files:
+            return sorted(files)
+
+    return list_folder_videos(block.folder)
+
+
 def list_unreferenced_media(folder: Path, copied: dict[str, str]) -> list[Path]:
     files: list[Path] = []
     for path in sorted(folder.iterdir()):
@@ -424,7 +513,7 @@ def build_welcome_or_questions(
     asset_dir = OUT_DIR / "assets" / block.order_key
     ctx = AssetContext(block=block, asset_dir=asset_dir, log=log)
 
-    videos = list_folder_videos(block.folder)
+    videos = list_background_videos(block, log)
     video_urls: list[str] = []
     if videos:
         log.item(f"фон: {len(videos)} видео")
@@ -490,8 +579,13 @@ def build_talk_slides(block: Block, log: BuildLog) -> list[dict]:
 
         if key == "демо":
             demo_section_seen = True
-            demo_intro_html = section_to_html(content, ctx, block_label=block_label)
-            media_files = list_unreferenced_media(block.folder, ctx.copied)
+            intro_text, demo_refs = extract_demo_media(content)
+            demo_intro_html = section_to_html(
+                intro_text, ctx, block_label=block_label
+            )
+            media_files = resolve_demo_files(
+                block.folder, demo_refs, ctx.copied, log, block_label
+            )
             total = len(media_files)
 
             if total == 0:

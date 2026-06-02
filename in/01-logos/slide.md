@@ -37,6 +37,10 @@ type: talk
 - Загружаем лог мобильного приложения — видим список чеков, таблицу товаров и итоги.
 - Открываем десктопный лог — парсер находит чеки даже без стандартных URL, через резервный поиск по статусам.
 
+<video src="demo-01.mp4" controls playsinline preload="metadata"></video>
+
+<video src="demo-02.mp4" controls playsinline preload="metadata"></video>
+
 ## Вопросы?
 
 - Что делать, если в логе вообще нет JSON с товарами?
