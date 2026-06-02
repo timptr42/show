@@ -6,16 +6,20 @@
   <title>{{ presentation_title }}</title>
   <style>
     :root {
-      --bg: #f6f6f4;
-      --fg: #111111;
-      --muted: #4a4a4a;
+      --bg: #f4f3ef;
+      --bg-tint: #eae8e2;
+      --fg: #121212;
+      --muted: #5a5a56;
       --accent: #0057ff;
-      --accent-dim: rgba(0, 87, 255, 0.15);
-      --line: #d8d8d4;
+      --accent-soft: #3d7dff;
+      --accent-dim: rgba(0, 87, 255, 0.12);
+      --line: #cfcbc4;
       --overlay: rgba(8, 8, 12, 0.68);
       --font: "Segoe UI", system-ui, -apple-system, sans-serif;
-      --bar-h: 72px;
+      --bar-h: 68px;
       --slide-margin: 5%;
+      --radius: 6px;
+      --shadow: 0 8px 28px rgba(18, 18, 18, 0.08);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -64,6 +68,8 @@
       flex-direction: column;
       overflow: hidden;
       min-height: 0;
+      border-radius: calc(var(--radius) + 2px);
+      box-shadow: var(--shadow);
     }
 
     .slide-fit-host {
@@ -110,6 +116,7 @@
       max-height: 100%;
       aspect-ratio: 16 / 9;
       object-fit: contain;
+      cursor: pointer;
     }
 
     .slide.demo .demo-media img {
@@ -129,7 +136,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: rgba(6, 6, 10, 0.94);
+      background: rgba(6, 6, 10, 0.88);
+      backdrop-filter: blur(10px);
       padding: 2vh 2vw;
     }
 
@@ -176,9 +184,22 @@
     /* —— шапка проекта + шаги —— */
     .talk-header {
       flex: 0 0 auto;
-      padding: 0 0 1.1vh;
-      border-bottom: 4px solid var(--fg);
-      background: var(--bg);
+      padding: 0 0 1vh;
+      border-bottom: 3px solid var(--fg);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, transparent 100%),
+        var(--bg);
+      position: relative;
+    }
+
+    .talk-header::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: -3px;
+      width: min(28%, 220px);
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-soft));
     }
 
     .talk-identity {
@@ -190,10 +211,10 @@
     }
 
     .project-title {
-      font-size: clamp(28px, 4vw, 56px);
+      font-size: clamp(24px, 3.35vw, 46px);
       font-weight: 900;
-      line-height: 1.05;
-      letter-spacing: -0.02em;
+      line-height: 1.06;
+      letter-spacing: -0.025em;
     }
 
     .talk-titles {
@@ -202,7 +223,7 @@
     }
 
     .project-author {
-      font-size: clamp(18px, 2.1vw, 32px);
+      font-size: clamp(15px, 1.75vw, 26px);
       font-weight: 600;
       color: var(--muted);
       white-space: nowrap;
@@ -211,45 +232,87 @@
 
     .talk-step {
       display: block;
-      margin: 0.35em 0 0;
-      font-size: clamp(16px, 1.85vw, 30px);
+      margin: 0.3em 0 0;
+      font-size: clamp(13px, 1.5vw, 24px);
       font-weight: 700;
-      color: var(--muted);
-      letter-spacing: 0.01em;
+      color: var(--accent);
+      letter-spacing: 0.02em;
       line-height: 1.2;
+      text-transform: none;
     }
 
     /* —— контентные слайды —— */
     .slide.content {
-      background: var(--bg);
+      background:
+        radial-gradient(120% 80% at 100% 0%, var(--accent-dim) 0%, transparent 55%),
+        linear-gradient(165deg, var(--bg) 0%, var(--bg-tint) 100%);
     }
 
     .slide-body {
       flex: 0 0 auto;
       overflow: hidden;
-      padding-top: 1.2vh;
-      font-size: clamp(18px, 2.1vw, 32px);
-      line-height: 1.45;
+      padding-top: 1vh;
+      font-size: clamp(15px, 1.75vw, 26px);
+      line-height: 1.48;
       max-width: 100%;
+      color: var(--fg);
     }
 
-    .slide-body ul, .slide-body ol { margin: 0.6em 0 0.6em 1.2em; }
-    .slide-body li { margin: 0.35em 0; }
-    .slide-body p { margin: 0.5em 0; }
-    .slide-body strong { font-weight: 800; }
+    .slide-body ul, .slide-body ol { margin: 0.55em 0 0.55em 1.15em; }
+    .slide-body li { margin: 0.3em 0; }
+    .slide-body li::marker { color: var(--accent); }
+    .slide-body p { margin: 0.45em 0; }
+    .slide-body strong { font-weight: 800; color: var(--fg); }
+    .slide-body code {
+      font-size: 0.92em;
+      padding: 0.08em 0.35em;
+      border-radius: 4px;
+      background: var(--accent-dim);
+      border: 1px solid rgba(0, 87, 255, 0.18);
+    }
 
     .slide-body img,
-    .slide-body svg,
-    .slide-body video {
+    .slide-body svg {
       display: block;
       max-width: 100%;
       max-height: 42vh;
       height: auto;
       width: auto;
-      margin: 0.8em auto;
-      border: 2px solid var(--fg);
+      margin: 0.7em auto;
+      border: 2px solid var(--line);
+      border-radius: var(--radius);
       background: #fff;
+      box-shadow: var(--shadow);
       cursor: zoom-in;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .slide-body img:hover,
+    .slide-body svg:hover {
+      border-color: var(--accent-soft);
+      box-shadow: 0 10px 32px rgba(0, 87, 255, 0.12);
+    }
+
+    .slide-body video {
+      display: block;
+      max-width: 100%;
+      max-height: 42vh;
+      height: auto;
+      width: 100%;
+      margin: 0.7em auto;
+      border: 2px solid var(--line);
+      border-radius: var(--radius);
+      background: #111;
+      box-shadow: var(--shadow);
+      aspect-ratio: 16 / 9;
+      object-fit: contain;
+      cursor: pointer;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .slide-body video:hover {
+      border-color: var(--accent-soft);
+      box-shadow: 0 10px 32px rgba(0, 87, 255, 0.12);
     }
 
     .slide-body .media-row {
@@ -275,7 +338,7 @@
       margin: 0;
       width: 100%;
       height: auto;
-      max-height: min(50vh, 540px);
+      max-height: min(48vh, 500px);
       object-fit: contain;
     }
 
@@ -283,20 +346,16 @@
       flex: 0 1 72%;
     }
 
-    .slide-body video {
-      width: 100%;
-      max-width: 100%;
-      aspect-ratio: 16 / 9;
-      object-fit: contain;
-    }
-
-    .slide-body table { border-collapse: collapse; margin: 1em 0; font-size: 0.85em; }
-    .slide-body th, .slide-body td { border: 2px solid var(--fg); padding: 0.45em 0.75em; }
-    .slide-body th { background: var(--fg); color: var(--bg); }
+    .slide-body table { border-collapse: collapse; margin: 0.85em 0; font-size: 0.88em; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+    .slide-body th, .slide-body td { border: 1px solid var(--line); padding: 0.4em 0.7em; }
+    .slide-body th { background: var(--fg); color: var(--bg); font-weight: 700; }
+    .slide-body tr:nth-child(even) td { background: rgba(255, 255, 255, 0.45); }
 
     /* —— демо (тот же светлый стиль, что и content) —— */
     .slide.demo {
-      background: var(--bg);
+      background:
+        radial-gradient(120% 80% at 0% 100%, var(--accent-dim) 0%, transparent 50%),
+        linear-gradient(165deg, var(--bg) 0%, var(--bg-tint) 100%);
       color: var(--fg);
     }
 
@@ -312,9 +371,9 @@
     .demo-intro {
       flex: 0 0 auto;
       color: var(--muted);
-      font-size: clamp(15px, 1.75vw, 26px);
-      line-height: 1.35;
-      margin-bottom: 0.8vh;
+      font-size: clamp(13px, 1.45vw, 22px);
+      line-height: 1.38;
+      margin-bottom: 0.7vh;
       overflow: hidden;
     }
 
@@ -334,8 +393,14 @@
     .demo-media img,
     .demo-media video {
       display: block;
-      border: 2px solid var(--fg);
+      border: 2px solid var(--line);
+      border-radius: var(--radius);
       background: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .demo-media video {
+      background: #111;
     }
 
     /* —— welcome / questions —— */
@@ -407,16 +472,18 @@
     }
 
     .cinematic h1 {
-      font-size: clamp(32px, 5vw, 72px);
+      font-size: clamp(26px, 4.2vw, 62px);
       font-weight: 900;
       line-height: 1.08;
       margin-bottom: 0.2em;
+      text-shadow: 0 2px 24px rgba(0, 0, 0, 0.45);
     }
 
     .cinematic .subtitle {
-      font-size: clamp(18px, 2.2vw, 32px);
+      font-size: clamp(16px, 1.9vw, 28px);
       font-weight: 500;
       color: #e8e8e8;
+      text-shadow: 0 1px 12px rgba(0, 0, 0, 0.35);
     }
 
     .hint {
@@ -436,7 +503,8 @@
       right: 0;
       bottom: 0;
       z-index: 30;
-      background: rgba(0, 0, 0, 0.9);
+      background: linear-gradient(180deg, rgba(18, 18, 18, 0.82) 0%, rgba(8, 8, 10, 0.96) 100%);
+      backdrop-filter: blur(8px);
       color: #fff;
       padding: 8px 18px 10px;
       display: flex;
@@ -444,21 +512,23 @@
       gap: 6px;
       height: var(--bar-h);
       justify-content: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     #progress-track {
       width: 100%;
-      height: 5px;
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 3px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.16);
+      border-radius: 999px;
       overflow: hidden;
     }
 
     #progress-fill {
       height: 100%;
       width: 0%;
-      background: var(--accent);
+      background: linear-gradient(90deg, var(--accent), var(--accent-soft));
       transition: width 0.3s ease;
+      border-radius: 999px;
     }
 
     #progress-meta {
@@ -476,7 +546,7 @@
 </head>
 <body>
   <div id="deck" aria-live="polite"></div>
-  <div class="hint">Колесо / стрелки · F11</div>
+  <div class="hint">Колесо / стрелки · клик по медиа — на весь экран · F11</div>
 
   <div id="progress-bar">
     <div id="progress-track"><div id="progress-fill"></div></div>
@@ -523,7 +593,7 @@
       mediaViewerImg.hidden = true;
     }
 
-    function openMediaViewer(src, kind) {
+    function openMediaViewer(src, kind, opts = {}) {
       if (!src) return;
       mediaViewer.hidden = false;
       mediaViewer.setAttribute('aria-hidden', 'false');
@@ -531,6 +601,12 @@
         mediaViewerImg.hidden = true;
         mediaViewerVideo.hidden = false;
         mediaViewerVideo.src = src;
+        if (typeof opts.currentTime === 'number') {
+          mediaViewerVideo.currentTime = opts.currentTime;
+        }
+        if (opts.autoplay) {
+          mediaViewerVideo.play().catch(() => {});
+        }
       } else {
         mediaViewerVideo.hidden = true;
         mediaViewerImg.hidden = false;
@@ -545,6 +621,17 @@
           e.preventDefault();
           e.stopPropagation();
           openMediaViewer(img.currentSrc || img.src, 'img');
+          return;
+        }
+
+        const video = e.target.closest('.slide-body video, .demo-media video');
+        if (video && deck.contains(video) && !video.classList.contains('bg-video')) {
+          e.preventDefault();
+          e.stopPropagation();
+          openMediaViewer(video.currentSrc || video.src, 'video', {
+            currentTime: video.currentTime,
+            autoplay: !video.paused,
+          });
         }
       });
 
