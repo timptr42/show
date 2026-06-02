@@ -39,7 +39,7 @@ type: talk
 - **Запуск тестов** — дорожки с разными переменными, повторы, доп. запросы при ошибке и возможность сохранять и загружать настройки прогонов
 - **Отчёты и экспорт** — HTML / Word, выгрузка коллекций обратно в Postman
 
-![Как устроен прогон: Коллекции → Профили → Запуск → Отчёт](assets/scheme.svg)
+![Как устроен прогон: Коллекции → Профили → Запуск → Отчёт](scheme.svg)
 
 *Локально на ПК · run.bat*
 
@@ -49,7 +49,7 @@ type: talk
 
 Привязываем профили тестов к запросам, для выполнения проверок.
 
-![Назначение профилей проверки на запросы коллекции](assets/04-collections.png)
+![Назначение профилей проверки на запросы коллекции](01-collections.png)
 
 ---
 
@@ -58,7 +58,7 @@ type: talk
 - **Профили тестов** — правила проверки без правки кода
 - **Запуск тестов** — отмечаем цепочку → **«Запустить»** → в логе PASS / FAIL
 
-<video src="videos/01-collections.mp4" controls width="960" poster="assets/01-collections.png"></video>
+<video src="01-collections.mp4" controls width="960" poster="01-collections.png"></video>
 
 *Демо: коллекции и прогон запросов*
 
@@ -70,9 +70,9 @@ type: talk
 - **Экспорт в Postman** — коллекция + окружение
 - Передать сценарий: папка приложения + `presets/*.json`
 
-![Экспорт для коллег в Postman](assets/03-reports.png)
+![Экспорт для коллег в Postman](02-run.png)
 
-<video src="videos/02-run.mp4" controls width="960" poster="assets/02-run.png"></video>
+<video src="02-run.mp4" controls width="960" poster="02-run.png"></video>
 
 *Демо: запуск и лог*
 

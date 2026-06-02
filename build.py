@@ -116,7 +116,6 @@ class BuildLog:
             self.warn(f"Предупреждений: {self._warnings}", indent=4)
         self._out()
         self.item(f"Презентация:  {OUT_DIR / 'index.html'}", indent=4)
-        self.item(f"GitHub Pages: {ROOT / 'docs' / 'index.html'}", indent=4)
         self._out()
 
     def error_block(self, exc: BaseException) -> None:
@@ -593,14 +592,6 @@ def clean_out(log: BuildLog) -> None:
     OUT_DIR.mkdir(parents=True)
 
 
-def copy_to_docs(log: BuildLog) -> None:
-    docs = ROOT / "docs"
-    if docs.exists():
-        shutil.rmtree(docs)
-    shutil.copytree(OUT_DIR, docs)
-    log.ok("скопировано в docs/ (GitHub Pages)")
-
-
 def render_index(slides: list[dict], meta: dict, log: BuildLog) -> None:
     env = Environment(
         loader=FileSystemLoader(TEMPLATES_DIR),
@@ -651,9 +642,6 @@ def main() -> int:
         blocks[0].meta.get("title", "Выступление") if blocks else "Выступление"
     )
     render_index(slides, {"presentation_title": presentation_title}, log)
-
-    log.phase("Публикация docs/")
-    copy_to_docs(log)
 
     log.summary(slides=len(slides), blocks=len(blocks))
     return 0
