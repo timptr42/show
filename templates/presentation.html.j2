@@ -72,8 +72,9 @@
       width: 100%;
       overflow: hidden;
       display: flex;
-      align-items: flex-start;
-      justify-content: center;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: flex-start;
     }
 
     .slide-fit-content {
@@ -81,6 +82,42 @@
       max-width: 100%;
       transform-origin: top center;
       will-change: transform;
+    }
+
+    /* демо-слайды: видео/картинка занимают оставшуюся высоту */
+    .slide.demo .slide-fit-content {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .slide.demo .demo-body {
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+
+    .slide.demo .demo-media {
+      flex: 1 1 auto;
+      min-height: min(32vh, 280px);
+    }
+
+    .slide.demo .demo-media video {
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      min-height: min(32vh, 280px);
+      max-height: 100%;
+      aspect-ratio: 16 / 9;
+      object-fit: contain;
+    }
+
+    .slide.demo .demo-media img {
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
     }
 
     /* —— шапка проекта + шаги —— */
@@ -149,7 +186,8 @@
     .slide-body strong { font-weight: 800; }
 
     .slide-body img,
-    .slide-body svg {
+    .slide-body svg,
+    .slide-body video {
       display: block;
       max-width: 100%;
       max-height: 42vh;
@@ -158,6 +196,13 @@
       margin: 0.8em auto;
       border: 2px solid var(--fg);
       background: #fff;
+    }
+
+    .slide-body video {
+      width: 100%;
+      max-width: 100%;
+      aspect-ratio: 16 / 9;
+      object-fit: contain;
     }
 
     .slide-body table { border-collapse: collapse; margin: 1em 0; font-size: 0.85em; }
@@ -204,12 +249,6 @@
     .demo-media img,
     .demo-media video {
       display: block;
-      width: auto;
-      height: auto;
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-      object-position: center center;
       border: 2px solid var(--fg);
       background: #fff;
     }
@@ -710,7 +749,7 @@
         if (current.type === 'welcome' || current.type === 'questions') {
           startBgRotation(activeEl);
         } else if (current.type === 'demo') {
-          pauseDemoVideos(activeEl);
+          /* демо-видео с controls — не автозапуск; первый кадр через preload=metadata */
         }
       }
 
@@ -762,8 +801,10 @@
     window.addEventListener('resize', scheduleFit);
 
     deck.querySelectorAll('.slide img, .slide video').forEach((media) => {
-      media.addEventListener('load', scheduleFit);
-      media.addEventListener('loadedmetadata', scheduleFit);
+      const refit = () => scheduleFit();
+      media.addEventListener('load', refit);
+      media.addEventListener('loadedmetadata', refit);
+      media.addEventListener('loadeddata', refit);
     });
   </script>
 </body>
