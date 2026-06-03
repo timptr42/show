@@ -94,8 +94,8 @@
   <text class="p" x="640" y="484">found, has_error, chain</text>
 
   <text class="h" x="1008" y="430">Смежная команда</text>
-  <text class="p" x="1008" y="462">быстро понимает</text>
-  <text class="p" x="1008" y="484">какой шаг сломался</text>
+  <text class="p" x="1008" y="462">быстро получает</text>
+  <text class="p" x="1008" y="484">обратную связь</text>
 
   <path class="bus" d="M1119 305 V350 H272"/>
   <path class="down-arrow" d="M272 350 V382"/>

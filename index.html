@@ -13,13 +13,17 @@
       --accent: #0057ff;
       --accent-soft: #3d7dff;
       --accent-dim: rgba(0, 87, 255, 0.12);
-      --line: #cfcbc4;
+      --line: rgba(18, 18, 18, 0.12);
       --overlay: rgba(8, 8, 12, 0.68);
       --font: "Segoe UI", system-ui, -apple-system, sans-serif;
-      --bar-h: 68px;
+      --bar-h: 78px;
       --slide-margin: 5%;
-      --radius: 6px;
-      --shadow: 0 8px 28px rgba(18, 18, 18, 0.08);
+      --radius: 10px;
+      --radius-lg: 16px;
+      --surface: rgba(255, 255, 255, 0.58);
+      --surface-strong: rgba(255, 255, 255, 0.78);
+      --shadow: 0 12px 40px rgba(18, 18, 18, 0.09);
+      --shadow-soft: 0 4px 16px rgba(18, 18, 18, 0.06);
       --content-pad-x: clamp(20px, 3vw, 52px);
     }
 
@@ -69,7 +73,11 @@
       flex-direction: column;
       overflow: hidden;
       min-height: 0;
-      border-radius: calc(var(--radius) + 2px);
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(255, 255, 255, 0.42);
+      background: rgba(255, 255, 255, 0.28);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       box-shadow: var(--shadow);
     }
 
@@ -91,6 +99,51 @@
       will-change: transform;
     }
 
+    .slide.content .slide-fit-content,
+    .slide.demo .slide-fit-content {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 0;
+      height: 100%;
+    }
+
+    .slide-body-fit {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      padding: 0 clamp(10px, 1.8vw, 28px) clamp(8px, 1.2vh, 16px);
+    }
+
+    .slide-body-fit.is-compact {
+      justify-content: center;
+      align-items: center;
+      padding: clamp(10px, 1.8vh, 24px) clamp(20px, 4vw, 56px);
+    }
+
+    .slide-body-fit.is-compact > .slide-body {
+      width: 100%;
+      max-width: min(920px, 100%);
+      padding: clamp(18px, 2.4vh, 32px) clamp(22px, 2.8vw, 40px);
+      background: var(--surface);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-soft), inset 0 1px 0 rgba(255, 255, 255, 0.62);
+    }
+
+    .slide-body-fit > .slide-body {
+      transform-origin: top center;
+    }
+
+    .slide-body-fit.is-compact > .slide-body {
+      transform-origin: center center;
+    }
+
     /* демо-слайды: видео/картинка занимают оставшуюся высоту */
     .slide.demo .slide-fit-content {
       flex: 1 1 auto;
@@ -106,25 +159,26 @@
 
     .slide.demo .demo-media {
       flex: 1 1 auto;
-      min-height: min(32vh, 280px);
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .slide.demo .demo-media video {
-      width: 100%;
-      max-width: 100%;
+      width: auto;
       height: auto;
-      min-height: min(32vh, 280px);
-      max-height: 100%;
-      aspect-ratio: 16 / 9;
+      max-width: none;
+      max-height: none;
       object-fit: contain;
-      cursor: pointer;
+      cursor: default;
     }
 
     .slide.demo .demo-media img {
       width: auto;
       height: auto;
-      max-width: 100%;
-      max-height: 100%;
+      max-width: none;
+      max-height: none;
       object-fit: contain;
       cursor: zoom-in;
     }
@@ -169,6 +223,8 @@
 
     .media-viewer-img,
     .media-viewer-video {
+      width: auto;
+      height: auto;
       max-width: 96vw;
       max-height: 92vh;
       object-fit: contain;
@@ -176,20 +232,14 @@
       background: #111;
     }
 
-    .media-viewer-video {
-      width: auto;
-      height: auto;
-      aspect-ratio: 16 / 9;
-    }
-
     /* —— шапка проекта + шаги —— */
     .talk-header {
       flex: 0 0 auto;
-      padding: 0 var(--content-pad-x) 1vh;
-      border-bottom: 3px solid var(--fg);
-      background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, transparent 100%),
-        var(--bg);
+      padding: clamp(12px, 1.5vh, 18px) var(--content-pad-x) clamp(10px, 1.2vh, 14px);
+      border-bottom: 1px solid rgba(18, 18, 18, 0.1);
+      background: var(--surface-strong);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       position: relative;
     }
 
@@ -197,10 +247,11 @@
       content: "";
       position: absolute;
       left: var(--content-pad-x);
-      bottom: -3px;
+      bottom: -1px;
       width: min(28%, 220px);
       height: 3px;
-      background: var(--fg);
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-soft));
     }
 
     .talk-identity {
@@ -212,7 +263,7 @@
     }
 
     .project-title {
-      font-size: clamp(20px, 2.85vw, 38px);
+      font-size: 28px;
       font-weight: 900;
       line-height: 1.06;
       letter-spacing: -0.025em;
@@ -224,9 +275,9 @@
     }
 
     .project-author {
-      font-size: clamp(13px, 1.5vw, 22px);
+      font-size: 15px;
       font-weight: 600;
-      color: var(--fg);
+      color: var(--muted);
       white-space: nowrap;
       flex: 0 0 auto;
     }
@@ -234,9 +285,9 @@
     .talk-step {
       display: block;
       margin: 0.3em 0 0;
-      font-size: clamp(11px, 1.25vw, 20px);
+      font-size: 15px;
       font-weight: 700;
-      color: var(--fg);
+      color: var(--muted);
       letter-spacing: 0.02em;
       line-height: 1.2;
       text-transform: none;
@@ -245,14 +296,15 @@
     /* —— контентные слайды —— */
     .slide.content {
       background:
-        radial-gradient(120% 80% at 100% 0%, var(--accent-dim) 0%, transparent 55%),
+        radial-gradient(90% 70% at 100% 0%, rgba(0, 87, 255, 0.09) 0%, transparent 52%),
+        radial-gradient(70% 55% at 0% 100%, rgba(255, 138, 0, 0.05) 0%, transparent 48%),
         linear-gradient(165deg, var(--bg) 0%, var(--bg-tint) 100%);
     }
 
     .slide-body {
       flex: 0 0 auto;
       overflow: hidden;
-      padding: 1.2vh var(--content-pad-x) 0.6vh;
+      padding: 0.8vh 0 0.4vh;
       font-size: clamp(13px, 1.5vw, 22px);
       line-height: 1.48;
       max-width: 100%;
@@ -272,8 +324,8 @@
     .slide-body code {
       font-size: 0.92em;
       padding: 0.08em 0.35em;
-      border-radius: 4px;
-      background: rgba(18, 18, 18, 0.06);
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.55);
       border: 1px solid var(--line);
       color: var(--fg);
     }
@@ -282,14 +334,14 @@
     .slide-body svg {
       display: block;
       max-width: 100%;
-      max-height: 42vh;
+      max-height: none;
       height: auto;
       width: auto;
-      margin: 0.7em auto;
-      border: 2px solid var(--line);
+      margin: 0;
+      border: 1px solid rgba(255, 255, 255, 0.65);
       border-radius: var(--radius);
-      background: #fff;
-      box-shadow: var(--shadow);
+      background: rgba(255, 255, 255, 0.82);
+      box-shadow: var(--shadow-soft);
       cursor: zoom-in;
       transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
@@ -302,18 +354,17 @@
 
     .slide-body video {
       display: block;
-      max-width: 100%;
-      max-height: 42vh;
+      width: auto;
       height: auto;
-      width: 100%;
-      margin: 0.7em auto;
+      max-width: 100%;
+      max-height: min(52vh, 720px);
+      margin: 0;
       border: 2px solid var(--line);
       border-radius: var(--radius);
       background: #111;
       box-shadow: var(--shadow);
-      aspect-ratio: 16 / 9;
       object-fit: contain;
-      cursor: pointer;
+      cursor: default;
       transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
@@ -322,15 +373,68 @@
       box-shadow: 0 10px 32px rgba(0, 87, 255, 0.12);
     }
 
+    /* обёртка медиа: оригинальные пропорции + кнопка «на весь экран» */
+    .slide-media-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: fit-content;
+      max-width: 100%;
+      max-height: 100%;
+      margin: 0.7em auto;
+    }
+
+    .slide-media-wrap:only-child,
+    .slide-body > .slide-media-wrap {
+      display: flex;
+    }
+
+    .demo-media > .slide-media-wrap {
+      margin: 0;
+      flex: 0 1 auto;
+      min-height: 0;
+      min-width: 0;
+    }
+
+    .slide-media-expand {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      z-index: 2;
+      width: 36px;
+      height: 36px;
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.82);
+      backdrop-filter: blur(8px);
+      color: var(--fg);
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      opacity: 0.92;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .slide-media-expand:hover {
+      opacity: 1;
+      border-color: var(--accent-soft);
+      background: #fff;
+    }
+
     .slide-body .media-row {
       display: flex;
       flex-direction: row;
       flex-wrap: nowrap;
       gap: clamp(12px, 2vw, 28px);
-      margin: 0.6em 0;
+      margin: 0.6em auto;
       width: 100%;
-      align-items: stretch;
+      align-items: center;
       justify-content: center;
+    }
+
+    .slide-body .media-row + .media-row {
+      margin-top: 0.45em;
     }
 
     .slide-body .media-row .media-cell {
@@ -341,27 +445,56 @@
       justify-content: center;
     }
 
-    .slide-body .media-row .media-cell img {
+    .slide-body .media-row .media-cell img,
+    .slide-body .media-row .media-cell svg {
       margin: 0;
-      width: 100%;
+      width: auto;
       height: auto;
-      max-height: min(48vh, 500px);
+      max-width: 100%;
+      max-height: none;
       object-fit: contain;
     }
 
-    .slide-body .media-row:has(.media-cell:only-child) .media-cell {
-      flex: 0 1 72%;
+    .slide-body .media-row .media-cell .slide-media-wrap {
+      width: 100%;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    .slide-body table { border-collapse: collapse; margin: 0.85em 0; font-size: 0.88em; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
-    .slide-body th, .slide-body td { border: 1px solid var(--line); padding: 0.4em 0.7em; }
-    .slide-body th { background: var(--fg); color: var(--bg); font-weight: 700; }
-    .slide-body tr:nth-child(even) td { background: rgba(255, 255, 255, 0.45); }
+    .slide-body .media-row:has(.media-cell:only-child) .media-cell {
+      flex: 0 1 min(72%, 920px);
+    }
+
+    .slide-body table {
+      border-collapse: separate;
+      border-spacing: 0;
+      margin: 0.85em 0;
+      font-size: 0.88em;
+      width: 100%;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-soft);
+      background: rgba(255, 255, 255, 0.42);
+    }
+
+    .slide-body th, .slide-body td {
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      padding: 0.5em 0.75em;
+    }
+
+    .slide-body tr:last-child td { border-bottom: 0; }
+    .slide-body th { background: rgba(18, 18, 18, 0.88); color: #fff; font-weight: 700; }
+    .slide-body td { background: rgba(255, 255, 255, 0.35); }
+    .slide-body tr:nth-child(even) td { background: rgba(255, 255, 255, 0.58); }
 
     /* —— слайд «?» (Q&A) —— */
     .slide.qa {
       background:
-        radial-gradient(120% 80% at 50% 0%, var(--accent-dim) 0%, transparent 55%),
+        radial-gradient(90% 70% at 50% 0%, rgba(0, 87, 255, 0.1) 0%, transparent 55%),
         linear-gradient(165deg, var(--bg) 0%, var(--bg-tint) 100%);
     }
 
@@ -378,14 +511,29 @@
       color: var(--fg);
       letter-spacing: -0.04em;
       user-select: none;
+      padding: 0.12em 0.28em;
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.65);
+      box-shadow: var(--shadow);
     }
 
     /* —— демо (тот же светлый стиль, что и content) —— */
     .slide.demo {
       background:
-        radial-gradient(120% 80% at 0% 100%, var(--accent-dim) 0%, transparent 50%),
+        radial-gradient(90% 70% at 0% 100%, rgba(0, 87, 255, 0.09) 0%, transparent 50%),
+        radial-gradient(70% 55% at 100% 0%, rgba(255, 138, 0, 0.05) 0%, transparent 48%),
         linear-gradient(165deg, var(--bg) 0%, var(--bg-tint) 100%);
       color: var(--fg);
+    }
+
+    .slide.demo .demo-body {
+      overflow: visible;
+    }
+
+    .slide.demo .slide-fit-host {
+      overflow: visible;
     }
 
     .demo-body {
@@ -404,7 +552,12 @@
       line-height: 1.38;
       margin-bottom: 0.7vh;
       overflow: hidden;
-      padding: 0 var(--content-pad-x);
+      padding: 0.65em var(--content-pad-x);
+      background: rgba(255, 255, 255, 0.48);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.58);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-soft);
     }
 
     .demo-intro:empty { display: none; }
@@ -439,6 +592,26 @@
     }
 
     .demo-media video {
+      background: #111;
+    }
+
+    .demo-media .slide-media-wrap img,
+    .demo-media .slide-media-wrap video {
+      border: none;
+      box-shadow: none;
+      border-radius: calc(var(--radius) - 2px);
+    }
+
+    .demo-media .slide-media-wrap {
+      border: 1px solid rgba(255, 255, 255, 0.65);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-soft);
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.35);
+      backdrop-filter: blur(8px);
+    }
+
+    .demo-media .slide-media-wrap video {
       background: #111;
     }
 
@@ -574,37 +747,122 @@
       padding: 8px 18px 10px;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 5px;
       height: var(--bar-h);
       justify-content: center;
       border-top: 1px solid rgba(255, 255, 255, 0.08);
     }
 
-    #progress-track {
+    #progress-label {
+      color: #ccc;
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.2;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-line {
+      display: flex;
+      align-items: center;
+      gap: 10px;
       width: 100%;
+    }
+
+    .bar-line[hidden] {
+      display: none;
+    }
+
+    #timer-track {
+      flex: 1 1 auto;
+      min-width: 0;
       height: 4px;
       background: rgba(255, 255, 255, 0.16);
       border-radius: 999px;
       overflow: hidden;
     }
 
-    #progress-fill {
+    #progress-track {
+      flex: 1 1 auto;
+      min-width: 0;
+      height: 4px;
+      display: flex;
+      align-items: stretch;
+      gap: 3px;
+      background: transparent;
+    }
+
+    #progress-segments {
+      display: flex;
+      align-items: stretch;
+      gap: 3px;
+      width: 100%;
       height: 100%;
+    }
+
+    .progress-segment {
+      flex: 1 1 0;
+      min-width: 6px;
+      height: 100%;
+      padding: 0;
+      border: 0;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.16);
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: background 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .progress-segment:hover {
+      background: rgba(255, 255, 255, 0.24);
+    }
+
+    .progress-segment.is-current {
+      box-shadow: 0 0 0 1px rgba(61, 125, 255, 0.55);
+    }
+
+    .progress-segment-fill {
+      position: absolute;
+      inset: 0 auto 0 0;
       width: 0%;
       background: linear-gradient(90deg, var(--accent), var(--accent-soft));
-      transition: width 0.3s ease;
-      border-radius: 999px;
+      border-radius: inherit;
+      transition: width 0.25s ease;
+      pointer-events: none;
     }
 
-    #progress-meta {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
+    .progress-segment.is-done .progress-segment-fill {
+      width: 100%;
+    }
+
+    #timer-fill {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #ff8a00, #ffc247);
+      border-radius: 999px;
+      transition: width 0.12s linear;
+    }
+
+    #timer-count,
+    #progress-count {
+      flex: 0 0 auto;
       font-size: 13px;
       font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+      min-width: 3.2em;
+      text-align: right;
     }
 
+    #timer-count {
+      color: #ffc247;
+    }
 
+    #progress-count {
+      color: var(--accent-soft);
+    }
 
     .catalog-loader {
       position: fixed;
@@ -662,9 +920,6 @@
       color: #ffd1d1;
     }
 
-    #progress-label { color: #ccc; }
-    #progress-count { color: #fff; font-variant-numeric: tabular-nums; }
-
   </style>
 </head>
 <body>
@@ -681,10 +936,14 @@
   <div class="hint">Колесо / стрелки · клик по медиа — на весь экран · F11</div>
 
   <div id="progress-bar">
-    <div id="progress-track"><div id="progress-fill"></div></div>
-    <div id="progress-meta">
-      <span id="progress-label">—</span>
-      <span id="progress-count">0 / 0</span>
+    <span id="progress-label">—</span>
+    <div class="bar-line" id="timer-line" hidden>
+      <div id="timer-track"><div id="timer-fill"></div></div>
+      <span id="timer-count" aria-label="Осталось времени на блок">7:00</span>
+    </div>
+    <div class="bar-line" id="slide-line">
+      <div id="progress-track"><div id="progress-segments"></div></div>
+      <span id="progress-count">0/0</span>
     </div>
   </div>
 
@@ -696,9 +955,19 @@
 
   <script>
     let SLIDES = [];
+    const BLOCK_TIMERS = {};
+    let BLOCK_NAV = [];
+    let timerBlockId = null;
+    let timerRemainingMs = 0;
+    let timerLastTick = 0;
+    let timerRafId = 0;
 
     const deck = document.getElementById('deck');
-    const progressFill = document.getElementById('progress-fill');
+    const progressSegments = document.getElementById('progress-segments');
+    const timerLine = document.getElementById('timer-line');
+    const timerTrack = document.getElementById('timer-track');
+    const timerFill = document.getElementById('timer-fill');
+    const timerCount = document.getElementById('timer-count');
     const progressLabel = document.getElementById('progress-label');
     const progressCount = document.getElementById('progress-count');
     const mediaViewer = document.getElementById('media-viewer');
@@ -748,20 +1017,14 @@
 
     function setupMediaViewer() {
       deck.addEventListener('click', (e) => {
-        const media = e.target.closest('.slide img, .slide video');
+        if (e.target.closest('.slide-media-expand')) return;
+        const media = e.target.closest('.slide img, .slide video, .slide svg');
         if (!media || !deck.contains(media)) return;
+        if (media.classList.contains('bg-video')) return;
+        if (media.tagName === 'VIDEO') return;
 
         e.preventDefault();
         e.stopPropagation();
-
-        if (media.tagName === 'VIDEO') {
-          openMediaViewer(media.currentSrc || media.src, 'video', {
-            currentTime: media.currentTime,
-            autoplay: !media.paused,
-          });
-          return;
-        }
-
         openMediaViewer(media.currentSrc || media.src, 'img');
       });
 
@@ -1089,6 +1352,7 @@
         const url = await ensureAsset(catalog, block, match[2], blockLabel);
         if (!url) return '';
         let attrs = `${match[1] || ''}${match[3] || ''}`;
+        attrs = attrs.replace(/\s+(width|height)=["'][^"']*["']/gi, '');
         const posterMatch = attrs.match(/\s+poster=["']([^"']+)["']/i);
         if (posterMatch) {
           const posterUrl = await ensureAsset(catalog, block, posterMatch[1], blockLabel);
@@ -1222,18 +1486,35 @@
 
       function flush() {
         if (!run.length) return;
+        if (run.length === 1) {
+          run = [];
+          return;
+        }
+
+        const chunkSizes = [];
+        if (run.length >= 2 && run.length <= 4) {
+          chunkSizes.push(run.length);
+        } else {
+          for (let i = 0; i < run.length; i += 2) {
+            chunkSizes.push(Math.min(2, run.length - i));
+          }
+        }
+
         const rows = [];
-        for (let i = 0; i < run.length; i += 2) {
+        let idx = 0;
+        chunkSizes.forEach((size) => {
           const row = document.createElement('div');
           row.className = 'media-row';
-          run.slice(i, i + 2).forEach((p) => {
+          for (let j = 0; j < size; j += 1) {
             const cell = document.createElement('div');
             cell.className = 'media-cell';
-            cell.appendChild(p.querySelector('img'));
+            cell.appendChild(run[idx].querySelector('img'));
             row.appendChild(cell);
-          });
+            idx += 1;
+          }
           rows.push(row);
-        }
+        });
+
         run[0].replaceWith(...rows);
         run.slice(1).forEach((node) => node.remove());
         run = [];
@@ -1410,6 +1691,7 @@
 
       const slides = [];
       for (const block of blocks) {
+        registerBlockTimer(block);
         if (block.block_type === 'welcome') {
           slides.push(await buildWelcomeOrQuestions(catalog, block, 'welcome'));
         } else if (block.block_type === 'questions') {
@@ -1423,11 +1705,14 @@
 
     async function loadCatalog(catalog) {
       showLoader('Чтение In Catalog', 'Собираю презентацию напрямую из папок с slide.md и медиа...', { pick: false });
+      Object.keys(BLOCK_TIMERS).forEach((key) => { delete BLOCK_TIMERS[key]; });
       const result = await buildSlidesFromCatalog(catalog);
       SLIDES = result.slides;
       document.title = result.title;
       deck.innerHTML = '';
       index = 0;
+      buildBlockNav();
+      renderProgressSegments();
       buildDeck();
       hideLoader();
       updateUI();
@@ -1537,9 +1822,11 @@
             <div class="slide-fit-host">
               <div class="slide-fit-content">
                 ${renderTalkHeader(data, demoTitle)}
-                <div class="slide-body demo-body">
-                  <div class="demo-intro">${data.intro_html || ''}</div>
-                  <div class="demo-media">${media}</div>
+                <div class="slide-body-fit">
+                  <div class="slide-body demo-body">
+                    <div class="demo-intro">${data.intro_html || ''}</div>
+                    <div class="demo-media">${media}</div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1554,7 +1841,9 @@
           <div class="slide-fit-host">
             <div class="slide-fit-content">
               ${renderTalkHeader(data, data.section_title || '')}
-              <div class="slide-body">${data.html || ''}</div>
+              <div class="slide-body-fit">
+                <div class="slide-body">${data.html || ''}</div>
+              </div>
             </div>
           </div>
         </div>
@@ -1562,30 +1851,286 @@
       return el;
     }
 
+    function parseTimerMinSec(meta) {
+      const raw = String(meta?.timer_min ?? '').trim().replace(',', '.');
+      const n = parseFloat(raw);
+      return Number.isFinite(n) && n > 0 ? n * 60 * 1000 : 0;
+    }
+
+    function registerBlockTimer(block) {
+      BLOCK_TIMERS[block.order_key] = parseTimerMinSec(block.meta);
+    }
+
+    function getBlockTimerMs(blockId) {
+      return BLOCK_TIMERS[blockId] || 0;
+    }
+
+    function formatTimerMs(ms) {
+      const totalSec = Math.max(0, Math.ceil(ms / 1000));
+      const m = Math.floor(totalSec / 60);
+      const s = totalSec % 60;
+      return `${m}:${String(s).padStart(2, '0')}`;
+    }
+
+    function updateTimerBar() {
+      const total = getBlockTimerMs(timerBlockId);
+      if (!total) {
+        timerLine.hidden = true;
+        timerFill.style.width = '0%';
+        timerCount.textContent = '';
+        return;
+      }
+      timerLine.hidden = false;
+      const pct = Math.max(0, Math.min(100, (timerRemainingMs / total) * 100));
+      timerFill.style.width = pct + '%';
+      timerCount.textContent = formatTimerMs(timerRemainingMs);
+    }
+
+    function stopBlockTimer() {
+      if (timerRafId) cancelAnimationFrame(timerRafId);
+      timerRafId = 0;
+    }
+
+    function tickBlockTimer(now) {
+      if (!timerBlockId || !getBlockTimerMs(timerBlockId)) return;
+      const dt = Math.max(0, now - timerLastTick);
+      timerLastTick = now;
+      timerRemainingMs = Math.max(0, timerRemainingMs - dt);
+      updateTimerBar();
+      if (timerRemainingMs > 0) {
+        timerRafId = requestAnimationFrame(tickBlockTimer);
+      }
+    }
+
+    function syncBlockTimer(slide) {
+      const blockId = slide?.block_id || null;
+      if (blockId !== timerBlockId) {
+        timerBlockId = blockId;
+        timerRemainingMs = getBlockTimerMs(blockId);
+      }
+      stopBlockTimer();
+      timerLastTick = performance.now();
+      updateTimerBar();
+      if (timerRemainingMs > 0) {
+        timerRafId = requestAnimationFrame(tickBlockTimer);
+      }
+    }
+
+    function openSlideMediaFullscreen(media) {
+      if (!media) return;
+      const src = media.currentSrc || media.src;
+      if (!src) return;
+      if (media.tagName === 'VIDEO') {
+        openMediaViewer(src, 'video', {
+          currentTime: media.currentTime,
+          autoplay: !media.paused,
+        });
+        return;
+      }
+      openMediaViewer(src, 'img');
+    }
+
+    function wrapSlideMedia(slideEl) {
+      slideEl.querySelectorAll('.slide-body img, .slide-body svg, .slide-body video, .demo-media img, .demo-media video').forEach((media) => {
+        if (media.closest('.slide-media-wrap') || media.classList.contains('bg-video')) return;
+
+        const wrap = document.createElement('div');
+        wrap.className = 'slide-media-wrap';
+        media.replaceWith(wrap);
+        wrap.appendChild(media);
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'slide-media-expand';
+        btn.setAttribute('aria-label', 'Открыть на весь экран');
+        btn.title = 'На весь экран';
+        btn.textContent = '⛶';
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          openSlideMediaFullscreen(media);
+        });
+        wrap.appendChild(btn);
+      });
+    }
+
     function buildDeck() {
       deck.innerHTML = '';
-      SLIDES.forEach((s, i) => deck.appendChild(renderSlide(s, i)));
+      SLIDES.forEach((s, i) => {
+        const slideEl = renderSlide(s, i);
+        wrapSlideMedia(slideEl);
+        deck.appendChild(slideEl);
+      });
       bindMediaFitEvents();
     }
 
     /** Подгонка контента слайда в область с 5% полями без прокрутки. */
+    function mediaNaturalSize(media) {
+      if (!media) return { w: 0, h: 0 };
+      if (media.tagName === 'VIDEO') {
+        return { w: media.videoWidth || 0, h: media.videoHeight || 0 };
+      }
+      if (media.tagName === 'svg') {
+        const vb = media.viewBox?.baseVal;
+        if (vb && vb.width > 0 && vb.height > 0) {
+          return { w: vb.width, h: vb.height };
+        }
+        try {
+          const box = media.getBBox();
+          if (box.width > 0 && box.height > 0) {
+            return { w: box.width, h: box.height };
+          }
+        } catch (_) {}
+      }
+      return { w: media.naturalWidth || media.width || 0, h: media.naturalHeight || media.height || 0 };
+    }
+
+    function fitContainedMedia(media, maxW, maxH, opts = {}) {
+      if (!media || maxW <= 0 || maxH <= 0) return;
+      const allowUpscale = opts.allowUpscale !== false;
+      media.style.maxWidth = '';
+      media.style.maxHeight = '';
+      media.style.width = '';
+      media.style.height = '';
+
+      const { w, h } = mediaNaturalSize(media);
+      if (!w || !h) {
+        media.style.maxWidth = `${Math.floor(maxW)}px`;
+        media.style.maxHeight = `${Math.floor(maxH)}px`;
+        return;
+      }
+
+      const scale = Math.min(maxW / w, maxH / h, allowUpscale ? Infinity : 1);
+      media.style.width = `${Math.max(1, Math.floor(w * scale))}px`;
+      media.style.height = `${Math.max(1, Math.floor(h * scale))}px`;
+    }
+
+    function fitDemoMedia(slideEl) {
+      const host = slideEl.querySelector('.slide-fit-host');
+      const media = slideEl.querySelector('.demo-media .slide-media-wrap video, .demo-media .slide-media-wrap img, .demo-media .slide-media-wrap svg, .demo-media > video, .demo-media > img, .demo-media > svg');
+      if (!host || !media) return;
+
+      const padX = 24;
+      const padY = 12;
+      const header = slideEl.querySelector('.talk-header');
+      const intro = slideEl.querySelector('.demo-intro');
+      const usedH = (header?.offsetHeight || 0) + (intro?.offsetHeight || 0) + padY;
+      const maxW = Math.max(0, host.clientWidth - padX);
+      const maxH = Math.max(0, host.clientHeight - usedH);
+
+      fitContainedMedia(media, maxW, maxH, { allowUpscale: media.tagName !== 'VIDEO' });
+    }
+
+    function fitSlideBodyMedia(slideEl) {
+      const host = slideEl.querySelector('.slide-fit-host');
+      const content = slideEl.querySelector('.slide-fit-content');
+      if (!host || !content || slideEl.classList.contains('demo')) return;
+
+      const bodyFit = content.querySelector('.slide-body-fit');
+      const body = bodyFit?.querySelector('.slide-body') || content.querySelector('.slide-body');
+      if (!body) return;
+
+      const padX = 24;
+      const padY = 16;
+      const bodyTop = bodyFit?.offsetTop ?? body.offsetTop ?? 0;
+      const areaH = bodyFit?.clientHeight || Math.max(0, host.clientHeight - bodyTop);
+
+      body.querySelectorAll('.media-row').forEach((row) => {
+        fitMediaRowGroup(row, host, bodyTop, padX, padY, areaH);
+      });
+
+      body.querySelectorAll('.slide-media-wrap').forEach((wrap) => {
+        if (wrap.closest('.media-row')) return;
+        const media = wrap.querySelector('video, img, svg');
+        if (!media) return;
+        const wrapTop = (wrap.offsetTop || 0) - (body.offsetTop || 0);
+        const maxW = Math.max(0, host.clientWidth - padX);
+        const maxH = Math.max(0, areaH - wrapTop - padY);
+        fitContainedMedia(media, maxW, maxH, { allowUpscale: true });
+      });
+    }
+
+    function fitMediaRowGroup(row, host, bodyTop, padX, padY, areaH) {
+      const cells = Array.from(row.querySelectorAll('.media-cell'));
+      const medias = cells.map((cell) => cell.querySelector('.slide-media-wrap img, .slide-media-wrap svg, .slide-media-wrap video, img, svg, video')).filter(Boolean);
+      if (!medias.length) return;
+
+      const rowTop = (row.offsetTop || 0);
+      const body = row.closest('.slide-body');
+      const rowTopInBody = body ? rowTop - (body.offsetTop || 0) : rowTop;
+      const maxH = Math.max(0, (areaH ?? (host.clientHeight - bodyTop)) - rowTopInBody - padY);
+      const maxW = Math.max(0, host.clientWidth - padX);
+      const gap = parseFloat(getComputedStyle(row).columnGap || getComputedStyle(row).gap || '16') || 16;
+      const cellW = Math.max(0, (maxW - gap * Math.max(0, medias.length - 1)) / medias.length);
+
+      let uniformScale = Infinity;
+      medias.forEach((media) => {
+        const { w, h } = mediaNaturalSize(media);
+        if (!w || !h) return;
+        uniformScale = Math.min(uniformScale, cellW / w, maxH / h);
+      });
+      if (!Number.isFinite(uniformScale) || uniformScale <= 0) {
+        medias.forEach((media) => fitContainedMedia(media, cellW, maxH, { allowUpscale: true }));
+        return;
+      }
+
+      medias.forEach((media) => {
+        const { w, h } = mediaNaturalSize(media);
+        if (!w || !h) {
+          fitContainedMedia(media, cellW, maxH, { allowUpscale: true });
+          return;
+        }
+        media.style.width = `${Math.max(1, Math.floor(w * uniformScale))}px`;
+        media.style.height = `${Math.max(1, Math.floor(h * uniformScale))}px`;
+      });
+    }
+
     function fitSlideContent(slideEl) {
+      if (slideEl.classList.contains('demo')) {
+        const content = slideEl.querySelector('.slide-fit-content');
+        const body = content?.querySelector('.slide-body');
+        if (content) content.style.transform = 'none';
+        if (body) body.style.transform = 'none';
+        fitDemoMedia(slideEl);
+        return;
+      }
+
       const host = slideEl.querySelector('.slide-fit-host');
       const content = slideEl.querySelector('.slide-fit-content');
       if (host && content) {
+        const bodyFit = content.querySelector('.slide-body-fit');
+        const body = bodyFit?.querySelector('.slide-body') || content.querySelector('.slide-body');
+        const header = content.querySelector('.talk-header');
+
         content.style.transform = 'none';
+        if (body) body.style.transform = 'none';
+        if (body) {
+          body.querySelectorAll('.slide-media-wrap video, .slide-media-wrap img, .slide-media-wrap svg').forEach((media) => {
+            media.style.width = '';
+            media.style.height = '';
+            media.style.maxWidth = '';
+            media.style.maxHeight = '';
+          });
+        }
 
         const boxW = host.clientWidth;
         const boxH = host.clientHeight;
-        if (boxW <= 0 || boxH <= 0) return;
+        if (boxW <= 0 || boxH <= 0 || !body) return;
 
-        const naturalH = content.scrollHeight;
-        const naturalW = content.scrollWidth;
-        const scale = Math.min(1, boxH / naturalH, boxW / naturalW);
+        fitSlideBodyMedia(slideEl);
+
+        const hasLargeMedia = Boolean(body.querySelector('.media-row, .slide-media-wrap'));
+        if (bodyFit) bodyFit.classList.toggle('is-compact', !hasLargeMedia);
+
+        const headerH = header?.offsetHeight || 0;
+        const fitH = Math.max(0, boxH - headerH);
+        const naturalH = body.scrollHeight;
+        const naturalW = body.scrollWidth;
+        const scale = Math.min(1, fitH / naturalH, boxW / naturalW);
 
         if (scale < 0.999) {
-          content.style.transform = `scale(${scale})`;
-          content.style.transformOrigin = 'top center';
+          body.style.transform = `scale(${scale})`;
+          body.style.transformOrigin = hasLargeMedia ? 'top center' : 'center center';
         }
         return;
       }
@@ -1797,12 +2342,87 @@
       });
     }
 
+    function buildBlockNav() {
+      BLOCK_NAV = [];
+      SLIDES.forEach((slide, i) => {
+        const id = slide.block_id || `slide-${i}`;
+        let block = BLOCK_NAV.find((entry) => entry.id === id);
+        if (!block) {
+          block = {
+            id,
+            start: i,
+            end: i,
+            count: 0,
+            title: slide.block_title || slide.title || id,
+          };
+          BLOCK_NAV.push(block);
+        }
+        block.end = i;
+        block.count += 1;
+      });
+    }
+
+    function renderProgressSegments() {
+      progressSegments.innerHTML = '';
+      BLOCK_NAV.forEach((block) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'progress-segment';
+        btn.style.flex = `${block.count} 1 0`;
+        btn.title = block.title;
+        btn.setAttribute('aria-label', `Перейти к блоку: ${block.title}`);
+        btn.dataset.start = String(block.start);
+
+        const fill = document.createElement('span');
+        fill.className = 'progress-segment-fill';
+        fill.setAttribute('aria-hidden', 'true');
+        btn.appendChild(fill);
+
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          goToSlide(block.start);
+        });
+        progressSegments.appendChild(btn);
+      });
+    }
+
+    function updateProgressSegments() {
+      BLOCK_NAV.forEach((block, bi) => {
+        const btn = progressSegments.children[bi];
+        if (!btn) return;
+        const fill = btn.querySelector('.progress-segment-fill');
+        btn.classList.remove('is-done', 'is-current', 'is-upcoming');
+
+        if (index > block.end) {
+          btn.classList.add('is-done');
+          fill.style.width = '100%';
+        } else if (index >= block.start && index <= block.end) {
+          btn.classList.add('is-current');
+          const inBlock = index - block.start + 1;
+          fill.style.width = `${(inBlock / block.count) * 100}%`;
+        } else {
+          btn.classList.add('is-upcoming');
+          fill.style.width = '0%';
+        }
+      });
+    }
+
+    function goToSlide(targetIndex) {
+      if (targetIndex < 0 || targetIndex >= SLIDES.length) return;
+      pauseInactiveMedia();
+      index = targetIndex;
+      updateUI();
+    }
+
     function updateUI() {
       const nodes = deck.querySelectorAll('.slide');
       if (!SLIDES.length) {
-        progressFill.style.width = '0%';
+        progressSegments.innerHTML = '';
+        stopBlockTimer();
+        timerLine.hidden = true;
+        timerCount.textContent = '';
         progressLabel.textContent = 'In Catalog пуст';
-        progressCount.textContent = '0 / 0';
+        progressCount.textContent = '0/0';
         return;
       }
       nodes.forEach((n, i) => n.classList.toggle('active', i === index));
@@ -1820,7 +2440,7 @@
       }
 
       const total = SLIDES.length;
-      progressFill.style.width = (total ? ((index + 1) / total) * 100 : 0) + '%';
+      updateProgressSegments();
 
       let label = current.block_title || current.title || 'Выступление';
       if (current.type === 'qa') {
@@ -1830,7 +2450,8 @@
       }
       if (current.type === 'demo') label += ' · демо ' + current.index;
       progressLabel.textContent = label;
-      progressCount.textContent = (index + 1) + ' / ' + total;
+      progressCount.textContent = `${index + 1}/${total}`;
+      syncBlockTimer(current);
       scheduleFit();
     }
 
@@ -1873,7 +2494,7 @@
     });
 
     function bindMediaFitEvents() {
-      deck.querySelectorAll('.slide img, .slide video').forEach((media) => {
+      deck.querySelectorAll('.slide img, .slide video, .slide svg').forEach((media) => {
         const refit = () => scheduleFit();
         media.addEventListener('load', refit);
         media.addEventListener('loadedmetadata', refit);
