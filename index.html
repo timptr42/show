@@ -858,6 +858,7 @@
 
     #timer-count {
       color: #ffc247;
+      min-width: 9.5em;
     }
 
     #progress-count {
@@ -939,7 +940,7 @@
     <span id="progress-label">—</span>
     <div class="bar-line" id="timer-line" hidden>
       <div id="timer-track"><div id="timer-fill"></div></div>
-      <span id="timer-count" aria-label="Осталось времени на блок">7:00</span>
+      <span id="timer-count" aria-label="Осталось на блоке и общее время презентации">7:00 / 62:00</span>
     </div>
     <div class="bar-line" id="slide-line">
       <div id="progress-track"><div id="progress-segments"></div></div>
@@ -1899,6 +1900,10 @@
       return BLOCK_TIMERS[blockId] || 0;
     }
 
+    function getTotalPresentationMs() {
+      return Object.values(BLOCK_TIMERS).reduce((sum, ms) => sum + (ms || 0), 0);
+    }
+
     function formatTimerMs(ms) {
       const totalSec = Math.max(0, Math.ceil(ms / 1000));
       const m = Math.floor(totalSec / 60);
@@ -1906,18 +1911,33 @@
       return `${m}:${String(s).padStart(2, '0')}`;
     }
 
+    function formatTimerCountdown() {
+      const totalPresentationMs = getTotalPresentationMs();
+      const totalLabel = totalPresentationMs ? formatTimerMs(totalPresentationMs) : '';
+      if (!timerBlockId || !getBlockTimerMs(timerBlockId)) {
+        return totalLabel ? `— / ${totalLabel}` : '';
+      }
+      const blockLabel = formatTimerMs(timerRemainingMs);
+      return totalLabel ? `${blockLabel} / ${totalLabel}` : blockLabel;
+    }
+
     function updateTimerBar() {
       const total = getBlockTimerMs(timerBlockId);
-      if (!total) {
+      const totalPresentationMs = getTotalPresentationMs();
+      if (!total && !totalPresentationMs) {
         timerLine.hidden = true;
         timerFill.style.width = '0%';
         timerCount.textContent = '';
         return;
       }
       timerLine.hidden = false;
-      const pct = Math.max(0, Math.min(100, (timerRemainingMs / total) * 100));
-      timerFill.style.width = pct + '%';
-      timerCount.textContent = formatTimerMs(timerRemainingMs);
+      if (total) {
+        const pct = Math.max(0, Math.min(100, (timerRemainingMs / total) * 100));
+        timerFill.style.width = pct + '%';
+      } else {
+        timerFill.style.width = '0%';
+      }
+      timerCount.textContent = formatTimerCountdown();
     }
 
     function stopBlockTimer() {
