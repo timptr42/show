@@ -672,8 +672,8 @@
 
   <div id="catalog-loader" class="catalog-loader" role="status" aria-live="polite">
     <div class="catalog-loader-card">
-      <h1 id="catalog-loader-title">Загрузка In Catalog</h1>
-      <p id="catalog-loader-detail">HTML читает папки и файлы из каталога <code>in/</code> напрямую.</p>
+      <h1 id="catalog-loader-title">Выберите In Catalog</h1>
+      <p id="catalog-loader-detail">Для локального запуска выберите папку <code>in/</code> или корень проекта. HTML прочитает только явно указанные в Markdown медиа.</p>
       <button id="catalog-pick" type="button" hidden>Выбрать каталог in/</button>
       <input id="catalog-file-input" type="file" webkitdirectory multiple hidden>
     </div>
@@ -748,23 +748,21 @@
 
     function setupMediaViewer() {
       deck.addEventListener('click', (e) => {
-        const img = e.target.closest('.slide-body img, .demo-media img, .demo-intro img');
-        if (img && deck.contains(img)) {
-          e.preventDefault();
-          e.stopPropagation();
-          openMediaViewer(img.currentSrc || img.src, 'img');
+        const media = e.target.closest('.slide img, .slide video');
+        if (!media || !deck.contains(media)) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (media.tagName === 'VIDEO') {
+          openMediaViewer(media.currentSrc || media.src, 'video', {
+            currentTime: media.currentTime,
+            autoplay: !media.paused,
+          });
           return;
         }
 
-        const video = e.target.closest('.slide-body video, .demo-media video');
-        if (video && deck.contains(video) && !video.classList.contains('bg-video')) {
-          e.preventDefault();
-          e.stopPropagation();
-          openMediaViewer(video.currentSrc || video.src, 'video', {
-            currentTime: video.currentTime,
-            autoplay: !video.paused,
-          });
-        }
+        openMediaViewer(media.currentSrc || media.src, 'img');
       });
 
       mediaViewerClose.addEventListener('click', (e) => {
@@ -794,8 +792,6 @@
     const catalogPick = document.getElementById('catalog-pick');
     const catalogFileInput = document.getElementById('catalog-file-input');
 
-    const CATALOG_CANDIDATES = ['in/', '../in/'];
-    const GITHUB_CATALOG = { owner: 'timptr42', repo: 'show', ref: 'main' };
     const VIDEO_EXTS = new Set(['.mp4', '.webm', '.mov', '.m4v']);
     const IMAGE_EXTS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg']);
     const MEDIA_EXTS = new Set([...VIDEO_EXTS, ...IMAGE_EXTS]);
@@ -901,141 +897,6 @@
       };
     }
 
-    function parseDirectoryLinks(html, baseUrl) {
-      const doc = new DOMParser().parseFromString(html, 'text/html');
-      return Array.from(doc.querySelectorAll('a[href]')).map((a) => {
-        const url = new URL(a.getAttribute('href'), baseUrl);
-        if (!url.href.startsWith(baseUrl.href)) return null;
-        const raw = decodeURIComponent(url.href.slice(baseUrl.href.length));
-        const rel = normalizePath(raw);
-        if (!rel || rel === '..' || rel.startsWith('?') || rel.startsWith('#')) return null;
-        return { name: basename(rel), relPath: rel, isDir: raw.endsWith('/') };
-      }).filter(Boolean);
-    }
-
-    class HttpDirectoryCatalog {
-      constructor(baseUrl) {
-        this.baseUrl = new URL(baseUrl, document.baseURI);
-        this.dirCache = new Map();
-        this.canLinkUnknown = true;
-      }
-
-      static async create(candidates) {
-        for (const candidate of candidates) {
-          try {
-            const catalog = new HttpDirectoryCatalog(candidate);
-            const folders = await catalog.listBlockFolders();
-            if (folders.length) return catalog;
-          } catch (err) {
-            console.info('HTTP catalog candidate failed:', candidate, err);
-          }
-        }
-        throw new Error('HTTP directory listing for in/ is unavailable.');
-      }
-
-      async listDir(rel = '') {
-        const key = normalizePath(rel);
-        if (this.dirCache.has(key)) return this.dirCache.get(key);
-        const url = new URL(key ? `${encodeUrlPath(key)}/` : './', this.baseUrl);
-        const res = await fetch(url.href, { cache: 'no-store' });
-        if (!res.ok) throw new Error(`Cannot read ${url.href}: ${res.status}`);
-        const html = await res.text();
-        const entries = parseDirectoryLinks(html, url.href);
-        this.dirCache.set(key, entries);
-        return entries;
-      }
-
-      async listBlockFolders() {
-        const entries = await this.listDir('');
-        const folders = entries.filter((e) => e.isDir && !e.name.startsWith('.')).map((e) => e.name).sort();
-        const valid = [];
-        for (const folder of folders) {
-          try {
-            await this.readText(folder, 'slide.md');
-            valid.push(folder);
-          } catch (err) {
-            console.info('Skipping catalog folder without slide.md:', folder);
-          }
-        }
-        return valid;
-      }
-
-      async readText(folder, relPath = 'slide.md') {
-        const url = this.urlFor(folder, relPath);
-        const res = await fetch(url, { cache: 'no-store' });
-        if (!res.ok) throw new Error(`Cannot read ${url}: ${res.status}`);
-        return res.text();
-      }
-
-      async listFiles(folder) {
-        const entries = await this.listDir(folder);
-        return entries.filter((e) => !e.isDir).map((e) => ({ name: e.name, relPath: e.name }));
-      }
-
-      urlFor(folder, relPath) {
-        return new URL(`${encodeURIComponent(folder)}/${encodeUrlPath(relPath)}`, this.baseUrl).href;
-      }
-    }
-
-    class GitHubCatalog {
-      constructor({ owner, repo, ref }) {
-        this.owner = owner;
-        this.repo = repo;
-        this.ref = ref;
-        this.dirCache = new Map();
-        this.canLinkUnknown = true;
-      }
-
-      static async create(config) {
-        const catalog = new GitHubCatalog(config);
-        const folders = await catalog.listBlockFolders();
-        if (!folders.length) throw new Error('GitHub catalog is empty.');
-        return catalog;
-      }
-
-      apiUrl(path) {
-        const suffix = encodeUrlPath(path);
-        const base = `https://api.github.com/repos/${this.owner}/${this.repo}/contents`;
-        return `${base}${suffix ? `/${suffix}` : ''}?ref=${encodeURIComponent(this.ref)}`;
-      }
-
-      async listDir(path) {
-        const key = normalizePath(path);
-        if (this.dirCache.has(key)) return this.dirCache.get(key);
-        const res = await fetch(this.apiUrl(key), { cache: 'no-store' });
-        if (!res.ok) throw new Error(`Cannot read GitHub catalog ${key}: ${res.status}`);
-        const payload = await res.json();
-        const entries = (Array.isArray(payload) ? payload : []).map((item) => ({
-          name: item.name,
-          relPath: item.name,
-          isDir: item.type === 'dir',
-        }));
-        this.dirCache.set(key, entries);
-        return entries;
-      }
-
-      async listBlockFolders() {
-        const entries = await this.listDir('in');
-        return entries.filter((e) => e.isDir && !e.name.startsWith('.')).map((e) => e.name).sort();
-      }
-
-      async readText(folder, relPath = 'slide.md') {
-        const url = this.urlFor(folder, relPath);
-        const res = await fetch(url, { cache: 'no-store' });
-        if (!res.ok) throw new Error(`Cannot read ${url}: ${res.status}`);
-        return res.text();
-      }
-
-      async listFiles(folder) {
-        const entries = await this.listDir(`in/${folder}`);
-        return entries.filter((e) => !e.isDir).map((e) => ({ name: e.name, relPath: e.name }));
-      }
-
-      urlFor(folder, relPath) {
-        return `https://raw.githubusercontent.com/${this.owner}/${this.repo}/${this.ref}/in/${encodeURIComponent(folder)}/${encodeUrlPath(relPath)}`;
-      }
-    }
-
     class FileCatalog {
       constructor(files) {
         this.fileMap = new Map();
@@ -1091,22 +952,6 @@
       const folders = await catalog.listBlockFolders();
       if (!folders.length) throw new Error('В выбранном каталоге не найдены папки с slide.md.');
       return catalog;
-    }
-
-    async function autoLoadCatalog() {
-      if (window.location.protocol !== 'file:') {
-        try {
-          return await HttpDirectoryCatalog.create(CATALOG_CANDIDATES);
-        } catch (httpErr) {
-          console.info(httpErr);
-        }
-        try {
-          return await GitHubCatalog.create(GITHUB_CATALOG);
-        } catch (githubErr) {
-          console.info(githubErr);
-        }
-      }
-      throw new Error('Браузер не даёт HTML-файлу самому прочитать локальную папку.');
     }
 
     function normalizeMediaBullets(text) {
@@ -1227,6 +1072,12 @@
         const url = await ensureAsset(catalog, block, match[2].trim().split(/\s+/)[0], blockLabel);
         if (!url) return '';
         return `![${match[1]}](${url})`;
+      });
+
+      out = await replaceAsync(out, /<img([^>]*)\ssrc=["']([^"']+)["']([^>]*)>/gi, async (match) => {
+        const url = await ensureAsset(catalog, block, match[2], blockLabel);
+        if (!url) return '';
+        return `<img${match[1] || ''} src="${escapeAttr(url)}"${match[3] || ''}>`;
       });
 
       out = await replaceAsync(out, /<video([^>]*)\ssrc=["']([^"']+)["']([^>]*)>(?:\s*<\/video>)?/gi, async (match) => {
@@ -1413,30 +1264,10 @@
             files.push(resolved);
           }
         }
-        if (files.length) return files.sort((a, b) => a.name.localeCompare(b.name));
+        return files;
       }
 
-      const files = await catalog.listFiles(block.folder);
-      return files
-        .filter((file) => VIDEO_EXTS.has(extensionOf(file.name)))
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .map((file) => ({ ...file, url: catalog.urlFor(block.folder, file.relPath) }));
-    }
-
-    async function listUnreferencedMedia(catalog, block) {
-      const files = await catalog.listFiles(block.folder);
-      return files.filter((file) => {
-        const relKey = normalizePath(file.relPath).toLowerCase();
-        const nameKey = file.name.toLowerCase();
-        return MEDIA_EXTS.has(extensionOf(file.name))
-          && nameKey !== 'slide.md'
-          && !block.used.has(nameKey)
-          && !block.used.has(relKey);
-      }).sort((a, b) => {
-        const ad = a.name.toLowerCase().startsWith('demo-') ? 0 : 1;
-        const bd = b.name.toLowerCase().startsWith('demo-') ? 0 : 1;
-        return ad - bd || a.name.localeCompare(b.name);
-      });
+      return [];
     }
 
     async function resolveDemoFiles(catalog, block, refs) {
@@ -1456,19 +1287,7 @@
         files.push(resolved);
       }
 
-      for (const file of await listUnreferencedMedia(catalog, block)) {
-        const key = file.name.toLowerCase();
-        if (seen.has(key)) continue;
-        seen.add(key);
-        block.used.add(key);
-        files.push({ ...file, url: catalog.urlFor(block.folder, file.relPath) });
-      }
-
-      return files.sort((a, b) => {
-        const ad = a.name.toLowerCase().startsWith('demo-') ? 0 : 1;
-        const bd = b.name.toLowerCase().startsWith('demo-') ? 0 : 1;
-        return ad - bd || a.name.localeCompare(b.name);
-      });
+      return files;
     }
 
     function stepId(title) {
@@ -1510,12 +1329,10 @@
         });
       }
 
-      let demoSectionSeen = false;
       for (const [sectionTitle, content] of block.sections) {
         const key = sectionTitle.trim().toLowerCase();
 
         if (key === 'демо') {
-          demoSectionSeen = true;
           const [introText, demoRefs] = extractDemoMedia(content);
           const demoIntroHtml = await sectionToHtml(introText, catalog, block, blockLabel);
           const mediaFiles = await resolveDemoFiles(catalog, block, demoRefs);
@@ -1566,10 +1383,6 @@
         });
       }
 
-      if (!demoSectionSeen) {
-        const leftovers = await listUnreferencedMedia(catalog, block);
-        if (leftovers.length) console.warn(`${blockLabel}: неиспользованные медиа: ${leftovers.map((f) => f.name).join(', ')}`);
-      }
       return slides;
     }
 
@@ -1609,13 +1422,11 @@
 
     async function initPresentation() {
       setupMediaViewer();
-      showLoader('Загрузка In Catalog', 'Пробую найти каталог in/ рядом с HTML или прочитать его из GitHub...', { pick: false });
-      try {
-        await loadCatalog(await autoLoadCatalog());
-      } catch (err) {
-        console.info(err);
-        showLoader('Выберите In Catalog', 'Для локально открытого HTML браузер требует вручную выбрать папку in/ или корень репозитория.', { pick: true, error: false });
-      }
+      showLoader(
+        'Выберите In Catalog',
+        'Локальный HTML не может сам прочитать соседнюю папку. Выберите каталог in/ или корень проекта; после этого презентация соберётся в браузере.',
+        { pick: true, error: false }
+      );
     }
 
     catalogPick.addEventListener('click', () => catalogFileInput.click());
