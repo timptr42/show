@@ -1196,7 +1196,8 @@
       async readText(folder, relPath = 'slide.md') {
         const entry = this.fileMap.get(`${folder}/${normalizePath(relPath)}`.toLowerCase());
         if (!entry) throw new Error(`Cannot read ${folder}/${relPath}`);
-        return entry.file.text();
+        const buf = await entry.file.arrayBuffer();
+        return new TextDecoder('utf-8').decode(buf).replace(/^\uFEFF/, '');
       }
 
       async listFiles(folder) {
@@ -1206,11 +1207,17 @@
           .map(([, entry]) => ({ name: entry.name, relPath: entry.relPath }));
       }
 
-      urlFor(folder, relPath) {
+      async urlFor(folder, relPath) {
         const key = `${folder}/${normalizePath(relPath)}`.toLowerCase();
         const entry = this.fileMap.get(key);
         if (!entry) return '';
-        if (!this.urlCache.has(key)) this.urlCache.set(key, URL.createObjectURL(entry.file));
+        if (!this.urlCache.has(key)) {
+          let source = entry.file;
+          if (!source.type && extensionOf(entry.name) === '.svg') {
+            source = new Blob([await source.arrayBuffer()], { type: 'image/svg+xml' });
+          }
+          this.urlCache.set(key, URL.createObjectURL(source));
+        }
         return this.urlCache.get(key);
       }
     }
@@ -1281,9 +1288,9 @@
       for (const candidate of candidates) {
         const relKey = normalizePath(candidate).toLowerCase();
         const match = byRel.get(relKey) || byName.get(basename(candidate).toLowerCase());
-        if (match) return { name: match.name, relPath: match.relPath, url: catalog.urlFor(block.folder, match.relPath) };
+        if (match) return { name: match.name, relPath: match.relPath, url: await catalog.urlFor(block.folder, match.relPath) };
         if (candidate.includes('/') && catalog.canLinkUnknown) {
-          return { name: basename(candidate), relPath: candidate, url: catalog.urlFor(block.folder, candidate) };
+          return { name: basename(candidate), relPath: candidate, url: await catalog.urlFor(block.folder, candidate) };
         }
       }
 
@@ -1300,11 +1307,27 @@
             const parts = fileStem.split('-');
             return parts.length >= 2 && parts.slice(1).join('-') === tail;
           });
-          if (fallback) return { name: fallback.name, relPath: fallback.relPath, url: catalog.urlFor(block.folder, fallback.relPath) };
+          if (fallback) return { name: fallback.name, relPath: fallback.relPath, url: await catalog.urlFor(block.folder, fallback.relPath) };
         }
       }
 
       return null;
+    }
+
+    async function loadInlineSvg(catalog, block, relPath) {
+      const raw = await catalog.readText(block.folder, relPath);
+      return raw.replace(/^\uFEFF/, '').replace(/^<\?xml[^?]*\?\>\s*/i, '').trim();
+    }
+
+    async function inlineSvgMarkup(catalog, block, ref, blockLabel) {
+      const resolved = await resolveMediaRef(catalog, block, ref);
+      if (!resolved) {
+        console.warn(`${blockLabel}: пропущена ссылка — файл не найден: ${ref}`);
+        return '';
+      }
+      block.used.add(resolved.name.toLowerCase());
+      block.used.add(normalizePath(resolved.relPath).toLowerCase());
+      return (await loadInlineSvg(catalog, block, resolved.relPath)).replace(/\s+/g, ' ');
     }
 
     async function ensureAsset(catalog, block, ref, blockLabel) {
@@ -1337,7 +1360,11 @@
 
     async function rewriteMarkdownAssets(text, catalog, block, blockLabel) {
       let out = await replaceAsync(text, /!\[([^\]]*)\]\(([^)]+)\)/g, async (match) => {
-        const url = await ensureAsset(catalog, block, match[2].trim().split(/\s+/)[0], blockLabel);
+        const ref = match[2].trim().split(/\s+/)[0];
+        if (extensionOf(ref) === '.svg') {
+          return inlineSvgMarkup(catalog, block, ref, blockLabel);
+        }
+        const url = await ensureAsset(catalog, block, ref, blockLabel);
         if (!url) return '';
         return `![${match[1]}](${url})`;
       });
@@ -1400,7 +1427,7 @@
     function isSpecialBlockStart(lines, idx) {
       const trimmed = lines[idx].trim();
       if (!trimmed) return true;
-      if (/^<(video|img|div|table|p|ul|ol|h\d)\b/i.test(trimmed)) return true;
+      if (/^<(video|img|div|table|p|ul|ol|h\d|svg)\b/i.test(trimmed)) return true;
       if (/^!\[[^\]]*\]\([^)]+\)\s*$/.test(trimmed)) return true;
       if (isListLine(trimmed) || isOrderedListLine(trimmed)) return true;
       if (idx + 1 < lines.length && trimmed.includes('|') && isTableSeparator(lines[idx + 1])) return true;
@@ -1417,7 +1444,7 @@
         const trimmed = line.trim();
         if (!trimmed) { i += 1; continue; }
 
-        if (/^<(video|img|div|table|p|ul|ol|h\d)\b/i.test(trimmed)) {
+        if (/^<(video|img|div|table|p|ul|ol|h\d|svg)\b/i.test(trimmed)) {
           out.push(trimmed);
           i += 1;
           continue;
@@ -1645,19 +1672,24 @@
             continue;
           }
 
-          mediaFiles.forEach((media, idx) => {
+          for (let idx = 0; idx < mediaFiles.length; idx += 1) {
+            const media = mediaFiles[idx];
+            const ext = extensionOf(media.name);
+            const isVideo = VIDEO_EXTS.has(ext);
+            const isSvg = ext === '.svg';
             slides.push({
               type: 'demo',
               block_id: block.order_key,
-              src: media.url,
-              mime: VIDEO_EXTS.has(extensionOf(media.name)) ? 'video' : 'image',
+              src: isSvg ? '' : media.url,
+              mime: isVideo ? 'video' : isSvg ? 'svg' : 'image',
+              svg_html: isSvg ? await loadInlineSvg(catalog, block, media.relPath) : '',
               index: idx + 1,
               total: mediaFiles.length,
               step_id: `демо-${idx + 1}`,
               intro_html: idx === 0 ? demoIntroHtml : '',
               ...talkMeta,
             });
-          });
+          }
           continue;
         }
 
@@ -1811,9 +1843,11 @@
         el.classList.add('demo');
         const media = data.mime === 'video'
           ? `<video src="${data.src}" controls playsinline preload="metadata"></video>`
-          : data.mime === 'image'
-            ? `<img src="${data.src}" alt="Демо ${data.index}">`
-            : `<p>Нет медиа</p>`;
+          : data.mime === 'svg'
+            ? (data.svg_html || '<p>Нет SVG</p>')
+            : data.mime === 'image'
+              ? `<img src="${data.src}" alt="Демо ${data.index}">`
+              : `<p>Нет медиа</p>`;
         const demoTitle = data.total > 1
           ? `Демо ${data.index} / ${data.total}`
           : 'Демо';

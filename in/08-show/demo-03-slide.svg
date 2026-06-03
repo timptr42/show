@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" font-family="Segoe UI, Arial, sans-serif">
+  <rect width="800" height="450" rx="14" fill="#f4f3ef"/>
+  <rect x="40" y="28" width="720" height="72" rx="10" fill="rgba(255,255,255,0.78)" stroke="rgba(18,18,18,0.08)"/>
+  <text x="56" y="52" fill="#121212" font-size="15" font-weight="700">Logos — контроль корректности чеков и оплат</text>
+  <text x="56" y="72" fill="#0057ff" font-size="13" font-weight="600">Проблематика</text>
+  <line x1="56" y1="78" x2="120" y2="78" stroke="#0057ff" stroke-width="2"/>
+  <text x="680" y="58" fill="#5a5a56" font-size="12" text-anchor="end">Григорий Сидоров</text>
+  <rect x="40" y="116" width="720" height="294" rx="12" fill="rgba(255,255,255,0.58)" stroke="rgba(18,18,18,0.08)"/>
+  <text x="64" y="152" fill="#121212" font-size="14">При запуске Ленты столкнулись с проблемой разницы между суммой</text>
+  <text x="64" y="176" fill="#121212" font-size="14">по позициям чека и итоговой суммой корзины:</text>
+  <text x="64" y="210" fill="#121212" font-size="14">• логи по операциям очень объёмные — вручную их не просмотреть</text>
+  <text x="64" y="234" fill="#121212" font-size="14">• товарная корзина и фактическая сумма оплаты — в разных местах</text>
+  <text x="64" y="258" fill="#121212" font-size="14">• по одному чеку может быть несколько записей с разным статусом</text>
+  <text x="64" y="292" fill="#121212" font-size="14">В итоге разбор одного случая занимал много времени.</text>
+  <rect x="64" y="318" width="672" height="68" rx="8" fill="rgba(255,255,255,0.35)" stroke="rgba(18,18,18,0.06)"/>
+  <text x="400" y="358" fill="#888" font-size="12" text-anchor="middle">единое оформление из index.html — докладчик не вёрстает слайды</text>
+</svg>

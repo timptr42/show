@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 230" font-family="Segoe UI, Arial, sans-serif" font-size="13">
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#555"/>
+    </marker>
+  </defs>
+  <rect x="10" y="48" width="250" height="118" rx="12" fill="#eef3ff" stroke="#0057ff" stroke-width="2"/>
+  <text x="135" y="74" text-anchor="middle" font-weight="700" fill="#0057ff" font-size="14">1. Докладчики</text>
+  <text x="135" y="98" text-anchor="middle" fill="#333">формируют slide.md</text>
+  <text x="135" y="118" text-anchor="middle" fill="#333">и контент в папках in/</text>
+  <text x="135" y="142" text-anchor="middle" fill="#666" font-size="12">02-logos, 03-… + медиа</text>
+  <line x1="260" y1="107" x2="300" y2="107" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="305" y="48" width="250" height="118" rx="12" fill="#fff8e6" stroke="#c9a227" stroke-width="2"/>
+  <text x="430" y="74" text-anchor="middle" font-weight="700" fill="#9a7b00" font-size="14">2. Координатор</text>
+  <text x="430" y="98" text-anchor="middle" fill="#333">добавляет welcome</text>
+  <text x="430" y="118" text-anchor="middle" fill="#333">с фонами из Kling</text>
+  <text x="430" y="142" text-anchor="middle" fill="#666" font-size="12">00-welcome, 99-questions</text>
+  <line x1="555" y1="107" x2="595" y2="107" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="600" y="48" width="250" height="118" rx="12" fill="#eef8ee" stroke="#3a8f3a" stroke-width="2"/>
+  <text x="725" y="74" text-anchor="middle" font-weight="700" fill="#2d7a2d" font-size="14">3. Координатор</text>
+  <text x="725" y="98" text-anchor="middle" fill="#333">открывает index.html</text>
+  <text x="725" y="118" text-anchor="middle" fill="#333">и показывает show</text>
+  <text x="725" y="142" text-anchor="middle" fill="#666" font-size="12">браузер + каталог in/</text>
+  <rect x="860" y="70" width="48" height="74" rx="10" fill="#1a1a22" stroke="#555" stroke-width="2"/>
+  <text x="884" y="102" text-anchor="middle" fill="#fff" font-size="11">Kling</text>
+  <text x="884" y="120" text-anchor="middle" fill="#ccc" font-size="10">фон</text>
+  <line x1="850" y1="107" x2="860" y2="107" stroke="#555" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <text x="460" y="205" text-anchor="middle" fill="#666" font-size="12">Текст — докладчики · оформление и show — координатор</text>
+</svg>

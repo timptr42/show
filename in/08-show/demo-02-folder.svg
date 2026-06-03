@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 300" font-family="Segoe UI, Consolas, sans-serif" font-size="14">
+  <rect width="520" height="300" rx="12" fill="#1e1e1e"/>
+  <text x="24" y="36" fill="#9cdcfe" font-size="16" font-weight="600">in/02-logos/</text>
+  <text x="40" y="68" fill="#d4d4d4">slide.md</text>
+  <text x="40" y="96" fill="#d4d4d4">scheme.svg</text>
+  <text x="40" y="124" fill="#d4d4d4">demo-01.mp4</text>
+  <text x="40" y="152" fill="#d4d4d4">demo-02.mp4</text>
+  <rect x="24" y="178" width="472" height="96" rx="8" fill="#252526" stroke="#3c3c3c"/>
+  <text x="40" y="204" fill="#6a9955" font-size="12">одна папка = один доклад</text>
+  <text x="40" y="228" fill="#ccc" font-size="13">slide.md — текст и порядок слайдов</text>
+  <text x="40" y="252" fill="#ccc" font-size="13">медиа рядом — ссылки по имени файла</text>
+  <text x="24" y="292" fill="#888" font-size="11">имя папки задаёт порядок блока в презентации</text>
+</svg>
