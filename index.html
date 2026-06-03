@@ -1294,8 +1294,16 @@
       return title.trim().toLowerCase();
     }
 
+    function normalizeSectionTitle(title) {
+      return title.trim().toLowerCase();
+    }
+
+    function isDemoSection(title) {
+      return normalizeSectionTitle(title) === 'демо';
+    }
+
     function isQuestionsSection(title) {
-      const key = title.trim().toLowerCase().replace(/\?+$/, '').trim();
+      const key = normalizeSectionTitle(title).replace(/\?+$/, '').trim();
       return key === 'вопросы' || key === 'questions';
     }
 
@@ -1330,9 +1338,9 @@
       }
 
       for (const [sectionTitle, content] of block.sections) {
-        const key = sectionTitle.trim().toLowerCase();
+        const key = normalizeSectionTitle(sectionTitle);
 
-        if (key === 'демо') {
+        if (isDemoSection(sectionTitle)) {
           const [introText, demoRefs] = extractDemoMedia(content);
           const demoIntroHtml = await sectionToHtml(introText, catalog, block, blockLabel);
           const mediaFiles = await resolveDemoFiles(catalog, block, demoRefs);
@@ -1367,11 +1375,12 @@
           continue;
         }
 
-        if (isQuestionsSection(key)) {
+        if (isQuestionsSection(sectionTitle)) {
           slides.push({ type: 'qa', block_id: block.order_key, step_id: stepId(sectionTitle), ...talkMeta });
           continue;
         }
 
+        // Any non-special second-level heading is an ordinary content slide.
         slides.push({
           type: 'section',
           block_id: block.order_key,
