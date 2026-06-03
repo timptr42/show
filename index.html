@@ -843,17 +843,22 @@
       return s;
     }
 
+    function normalizeSlideText(text) {
+      return String(text || '').replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
+    }
+
     function parseFrontmatter(text) {
-      if (!text.startsWith('---')) return [{}, text];
-      const match = text.match(/^---\s*\n([\s\S]*?)\n---\s*\n?/);
-      if (!match) return [{}, text];
+      const normalized = normalizeSlideText(text);
+      if (!normalized.startsWith('---')) return [{}, normalized];
+      const match = normalized.match(/^---\s*\n([\s\S]*?)\n---\s*\n?/);
+      if (!match) return [{}, normalized];
       const meta = {};
-      match[1].split(/\r?\n/).forEach((line) => {
+      match[1].split('\n').forEach((line) => {
         const m = line.match(/^([A-Za-z0-9_-]+)\s*:\s*(.*)$/);
         if (!m) return;
         meta[m[1]] = stripQuotes(m[2]);
       });
-      return [meta, text.slice(match[0].length)];
+      return [meta, normalized.slice(match[0].length)];
     }
 
     function splitDocument(body) {
@@ -957,7 +962,7 @@
     function normalizeMediaBullets(text) {
       return text.split('\n').map((line) => {
         const match = line.trim().match(/^-\s+`([^`]+)`\s*$/);
-        if (match && MEDIA_EXTS.has(extensionOf(match[1]))) {
+        if (match && IMAGE_EXTS.has(extensionOf(match[1]))) {
           const name = match[1];
           return `![${name}](${name})`;
         }
