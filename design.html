@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Fun · design</title>
+  <style>
+    :root {
+      --page-bg: #f4eadb;
+      --page-ink: #1d1712;
+      --page-muted: #6c5b4b;
+      --page-accent: #a45b2d;
+    }
+
+    * { box-sizing: border-box; }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 18% 18%, rgba(164, 91, 45, 0.16), transparent 34%),
+        radial-gradient(circle at 82% 12%, rgba(30, 23, 18, 0.08), transparent 30%),
+        linear-gradient(135deg, #f8f1e7 0%, var(--page-bg) 48%, #ead9c6 100%);
+      color: var(--page-ink);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+      padding: clamp(24px, 5vw, 72px);
+    }
+
+    .bootstrap-card {
+      width: min(820px, 100%);
+      border: 1px solid rgba(29, 23, 18, 0.28);
+      background: rgba(255, 249, 239, 0.86);
+      box-shadow: 18px 18px 0 rgba(29, 23, 18, 0.1);
+      padding: clamp(28px, 6vw, 68px);
+    }
+
+    .bootstrap-kicker {
+      margin: 0 0 1.5rem;
+      color: var(--page-accent);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .bootstrap-card h1 {
+      max-width: 11ch;
+      margin: 0;
+      color: var(--page-ink);
+      font-size: clamp(44px, 10vw, 112px);
+      font-weight: 900;
+      line-height: 0.86;
+      letter-spacing: -0.08em;
+      text-transform: lowercase;
+    }
+
+    .bootstrap-card p {
+      max-width: 56ch;
+      margin: 1.8rem 0 0;
+      color: var(--page-muted);
+      font-size: clamp(16px, 2vw, 22px);
+      line-height: 1.45;
+    }
+  </style>
+</head>
+<body>
+  <main class="bootstrap-card" role="status" aria-live="polite">
+    <p class="bootstrap-kicker">Vershina service style</p>
+    <h1>ai fun</h1>
+    <p>Загружаю исходную презентацию и применяю новый дизайн без изменения файлов проекта.</p>
+  </main>
+
+  <script>
+    const DESIGN_CSS = String.raw`
+      <style id="vershina-service-redesign">
+        :root {
+          --bg: #f4eadb;
+          --bg-tint: #ead9c6;
+          --fg: #1d1712;
+          --muted: #6e5f51;
+          --accent: #a45b2d;
+          --accent-soft: #d9823a;
+          --accent-dim: rgba(164, 91, 45, 0.15);
+          --line: rgba(29, 23, 18, 0.18);
+          --overlay: rgba(29, 23, 18, 0.62);
+          --font: Arial, Helvetica, sans-serif;
+          --bar-h: 84px;
+          --slide-margin: 4.7%;
+          --radius: 0;
+          --radius-lg: 0;
+          --surface: rgba(255, 248, 236, 0.78);
+          --surface-strong: rgba(255, 248, 236, 0.94);
+          --shadow: 20px 20px 0 rgba(29, 23, 18, 0.08);
+          --shadow-soft: 10px 10px 0 rgba(29, 23, 18, 0.06);
+          --content-pad-x: clamp(22px, 3.8vw, 72px);
+        }
+
+        html,
+        body {
+          background: #18120e;
+          color: var(--fg);
+          font-family: var(--font);
+        }
+
+        #deck {
+          background:
+            radial-gradient(circle at 12% 16%, rgba(164, 91, 45, 0.18), transparent 28%),
+            radial-gradient(circle at 86% 8%, rgba(255, 248, 236, 0.42), transparent 24%),
+            linear-gradient(135deg, #fbf3e8 0%, #f4eadb 44%, #ead9c6 100%);
+        }
+
+        #deck::before {
+          content: "";
+          position: fixed;
+          inset: 0;
+          z-index: 1;
+          pointer-events: none;
+          opacity: 0.34;
+          background-image:
+            linear-gradient(rgba(29, 23, 18, 0.055) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(29, 23, 18, 0.055) 1px, transparent 1px);
+          background-size: 80px 80px;
+          mask-image: linear-gradient(to bottom, #000 0%, transparent 78%);
+        }
+
+        .slide {
+          isolation: isolate;
+          transition: opacity 0.42s ease;
+        }
+
+        .slide.content,
+        .slide.demo,
+        .slide.qa {
+          background:
+            radial-gradient(circle at 78% 8%, rgba(164, 91, 45, 0.14), transparent 25%),
+            radial-gradient(circle at 14% 90%, rgba(40, 31, 23, 0.08), transparent 30%),
+            linear-gradient(135deg, #fbf2e6 0%, #f4eadb 54%, #ead8c1 100%);
+        }
+
+        .slide.content::after,
+        .slide.demo::after,
+        .slide.qa::after {
+          content: "";
+          position: absolute;
+          right: 4.7%;
+          top: 4.7%;
+          z-index: 0;
+          width: min(22vw, 280px);
+          aspect-ratio: 1;
+          border: 1px solid rgba(29, 23, 18, 0.18);
+          border-radius: 50%;
+          transform: translate(30%, -30%);
+          pointer-events: none;
+        }
+
+        .slide-margin-box {
+          z-index: 2;
+          border: 1px solid rgba(29, 23, 18, 0.3);
+          border-radius: 0;
+          background:
+            linear-gradient(90deg, rgba(255, 249, 239, 0.96) 0%, rgba(255, 249, 239, 0.86) 100%),
+            linear-gradient(135deg, rgba(164, 91, 45, 0.08), transparent 58%);
+          box-shadow: var(--shadow);
+          backdrop-filter: none;
+          -webkit-backdrop-filter: none;
+        }
+
+        .slide-margin-box::before {
+          content: "AI FUN";
+          position: absolute;
+          right: clamp(14px, 2vw, 28px);
+          top: clamp(12px, 1.8vw, 24px);
+          z-index: 3;
+          color: rgba(29, 23, 18, 0.34);
+          font-size: clamp(10px, 1vw, 14px);
+          font-weight: 900;
+          letter-spacing: 0.22em;
+        }
+
+        .slide-body-fit {
+          padding: clamp(10px, 1.8vh, 26px) var(--content-pad-x) clamp(16px, 2.2vh, 32px);
+        }
+
+        .slide-body-fit.is-compact {
+          justify-content: center;
+          align-items: center;
+          padding: clamp(18px, 3vh, 42px) var(--content-pad-x);
+        }
+
+        .slide-body-fit.is-compact > .slide-body {
+          border: 1px solid rgba(29, 23, 18, 0.24);
+          border-radius: 0;
+          background: #fff7eb;
+          box-shadow: var(--shadow-soft);
+          backdrop-filter: none;
+          -webkit-backdrop-filter: none;
+        }
+
+        .talk-header {
+          padding: clamp(20px, 3vh, 42px) var(--content-pad-x) clamp(14px, 2vh, 26px);
+          border-bottom: 1px solid rgba(29, 23, 18, 0.26);
+          background:
+            linear-gradient(90deg, rgba(255, 247, 235, 0.98) 0%, rgba(245, 231, 211, 0.88) 100%);
+          backdrop-filter: none;
+          -webkit-backdrop-filter: none;
+        }
+
+        .talk-header::after {
+          left: var(--content-pad-x);
+          bottom: -1px;
+          width: min(34vw, 420px);
+          height: 1px;
+          border-radius: 0;
+          background: var(--fg);
+        }
+
+        .talk-identity {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          align-items: end;
+          gap: 14px clamp(20px, 4vw, 70px);
+        }
+
+        .project-title {
+          color: var(--fg);
+          font-size: clamp(28px, 4.4vw, 70px);
+          font-weight: 900;
+          line-height: 0.88;
+          letter-spacing: -0.075em;
+          text-transform: lowercase;
+        }
+
+        .project-author {
+          align-self: start;
+          color: var(--fg);
+          font-size: clamp(12px, 1.05vw, 16px);
+          font-weight: 800;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
+          white-space: normal;
+          text-align: right;
+        }
+
+        .talk-step {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.65em;
+          margin-top: 0.9em;
+          color: var(--accent);
+          font-size: clamp(12px, 1.12vw, 17px);
+          font-weight: 800;
+          letter-spacing: 0.12em;
+          line-height: 1.1;
+          text-transform: uppercase;
+        }
+
+        .talk-step::before {
+          content: "";
+          display: inline-block;
+          width: 32px;
+          height: 1px;
+          background: currentColor;
+        }
+
+        .slide-body {
+          color: var(--fg);
+          font-size: clamp(15px, 1.58vw, 24px);
+          line-height: 1.34;
+          letter-spacing: -0.012em;
+        }
+
+        .slide-body h1,
+        .slide-body h2,
+        .slide-body h3 {
+          max-width: 12ch;
+          margin: 0.2em 0 0.35em;
+          color: var(--fg);
+          font-weight: 900;
+          line-height: 0.92;
+          letter-spacing: -0.075em;
+          text-transform: lowercase;
+        }
+
+        .slide-body h1 { font-size: clamp(48px, 8vw, 128px); }
+        .slide-body h2 { font-size: clamp(38px, 6vw, 94px); }
+        .slide-body h3 { font-size: clamp(28px, 4.2vw, 68px); }
+
+        .slide-body p {
+          margin: 0.58em 0;
+          max-width: 72ch;
+        }
+
+        .slide-body strong {
+          color: var(--fg);
+          font-weight: 900;
+        }
+
+        .slide-body a {
+          color: var(--accent);
+          font-weight: 800;
+          text-decoration-thickness: 1px;
+          text-underline-offset: 0.18em;
+        }
+
+        .slide-body ul,
+        .slide-body ol {
+          display: grid;
+          gap: 0.42em;
+          margin: 0.8em 0 0.8em 1.15em;
+        }
+
+        .slide-body li {
+          margin: 0;
+          padding-left: 0.15em;
+        }
+
+        .slide-body li::marker {
+          color: var(--accent);
+          font-weight: 900;
+        }
+
+        .slide-body code,
+        .demo-intro code {
+          border: 1px solid rgba(29, 23, 18, 0.22);
+          border-radius: 0;
+          background: #f0dec8;
+          color: var(--fg);
+          font-weight: 700;
+        }
+
+        .slide-body blockquote {
+          margin: 1em 0;
+          padding: 0.9em 1.1em;
+          border-left: 6px solid var(--accent);
+          background: rgba(255, 249, 239, 0.62);
+        }
+
+        .slide-body table {
+          border-collapse: collapse;
+          border: 1px solid rgba(29, 23, 18, 0.26);
+          border-radius: 0;
+          background: #fff7eb;
+          box-shadow: var(--shadow-soft);
+        }
+
+        .slide-body th,
+        .slide-body td {
+          border-bottom: 1px solid rgba(29, 23, 18, 0.2);
+          padding: 0.62em 0.8em;
+        }
+
+        .slide-body th {
+          background: var(--fg);
+          color: #fff8ec;
+          font-weight: 900;
+          letter-spacing: 0.03em;
+          text-transform: uppercase;
+        }
+
+        .slide-body td {
+          background: rgba(255, 248, 236, 0.76);
+        }
+
+        .slide-body tr:nth-child(even) td {
+          background: rgba(236, 219, 197, 0.7);
+        }
+
+        .slide-body img,
+        .slide-body svg,
+        .slide-body video,
+        .demo-media img,
+        .demo-media video {
+          border: 1px solid rgba(29, 23, 18, 0.28);
+          border-radius: 0;
+          background: #fff9ef;
+          box-shadow: var(--shadow-soft);
+        }
+
+        .slide-body video,
+        .demo-media video {
+          background: #17120f;
+        }
+
+        .slide-body img:hover,
+        .slide-body svg:hover,
+        .slide-body video:hover {
+          border-color: var(--accent);
+          box-shadow: 12px 12px 0 rgba(164, 91, 45, 0.16);
+        }
+
+        .slide-media-expand {
+          top: 10px;
+          right: 10px;
+          width: 40px;
+          height: 40px;
+          border: 1px solid var(--fg);
+          border-radius: 50%;
+          background: #fff8ec;
+          color: var(--fg);
+          box-shadow: 4px 4px 0 rgba(29, 23, 18, 0.16);
+          font-weight: 900;
+        }
+
+        .slide-media-expand:hover {
+          border-color: var(--accent);
+          background: var(--accent);
+          color: #fff8ec;
+        }
+
+        .demo-intro {
+          margin: 0 0 clamp(8px, 1.2vh, 18px);
+          padding: 0.85em 1em;
+          border: 1px solid rgba(29, 23, 18, 0.24);
+          border-radius: 0;
+          background: rgba(255, 248, 236, 0.86);
+          color: var(--fg);
+          box-shadow: none;
+          backdrop-filter: none;
+          -webkit-backdrop-filter: none;
+          font-size: clamp(12px, 1.2vw, 18px);
+        }
+
+        .demo-media .slide-media-wrap {
+          border: 1px solid rgba(29, 23, 18, 0.26);
+          border-radius: 0;
+          background: #fff8ec;
+          box-shadow: var(--shadow-soft);
+          backdrop-filter: none;
+          -webkit-backdrop-filter: none;
+        }
+
+        .slide-qa-mark {
+          border: 1px solid rgba(29, 23, 18, 0.28);
+          border-radius: 0;
+          background: #fff8ec;
+          color: var(--accent);
+          box-shadow: var(--shadow);
+          font-size: clamp(120px, 28vw, 420px);
+          line-height: 0.9;
+        }
+
+        .slide.cinematic {
+          color: #fff8ec;
+          background: #17120f;
+        }
+
+        .bg-video-stack {
+          background:
+            radial-gradient(circle at 24% 28%, rgba(164, 91, 45, 0.28), transparent 32%),
+            #17120f;
+        }
+
+        .bg-video {
+          filter: saturate(0.82) sepia(0.18) contrast(1.06) brightness(0.76);
+        }
+
+        .slide.cinematic::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          z-index: 1;
+          pointer-events: none;
+          background:
+            linear-gradient(90deg, rgba(23, 18, 15, 0.76) 0%, rgba(23, 18, 15, 0.24) 58%, rgba(23, 18, 15, 0.72) 100%),
+            radial-gradient(circle at 18% 18%, rgba(164, 91, 45, 0.42), transparent 30%);
+        }
+
+        .cinematic-banner {
+          top: 8%;
+          left: 5%;
+          right: auto;
+          width: min(790px, 72vw);
+          min-height: min(60vh, 560px);
+          justify-content: flex-start;
+          align-items: flex-end;
+          padding: clamp(28px, 5vw, 76px);
+          border: 1px solid rgba(255, 248, 236, 0.5);
+          border-bottom: 1px solid rgba(255, 248, 236, 0.5);
+          background: rgba(23, 18, 15, 0.64);
+          box-shadow: 20px 20px 0 rgba(0, 0, 0, 0.18);
+          text-align: left;
+        }
+
+        .cinematic-content {
+          margin: 0;
+          text-align: left;
+        }
+
+        .cinematic h1 {
+          max-width: 8.8ch;
+          margin: 0;
+          color: #fff8ec;
+          font-size: clamp(54px, 10vw, 154px);
+          font-weight: 900;
+          line-height: 0.82;
+          letter-spacing: -0.09em;
+          text-shadow: none;
+          text-transform: lowercase;
+        }
+
+        .cinematic .subtitle {
+          max-width: 42ch;
+          margin-top: 1.25em;
+          color: rgba(255, 248, 236, 0.84);
+          font-size: clamp(17px, 1.7vw, 28px);
+          font-weight: 700;
+          line-height: 1.28;
+          text-shadow: none;
+        }
+
+        .slide.cinematic-qa .cinematic-banner {
+          inset: var(--slide-margin) var(--slide-margin) calc(var(--bar-h) + var(--slide-margin));
+          width: auto;
+          min-height: auto;
+          justify-content: center;
+          align-items: center;
+          background: rgba(23, 18, 15, 0.54);
+        }
+
+        .cinematic-mark {
+          color: #fff8ec;
+          font-size: clamp(150px, 30vw, 470px);
+          font-weight: 900;
+          text-shadow: none;
+        }
+
+        .hint {
+          bottom: calc(var(--bar-h) + 10px);
+          color: rgba(29, 23, 18, 0.54);
+          font-size: 12px;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+
+        #progress-bar {
+          height: var(--bar-h);
+          padding: 10px clamp(18px, 3vw, 44px) 12px;
+          border-top: 1px solid rgba(29, 23, 18, 0.28);
+          background: #1d1712;
+          color: #fff8ec;
+          box-shadow: 0 -14px 0 rgba(29, 23, 18, 0.08);
+          backdrop-filter: none;
+        }
+
+        #progress-label {
+          color: rgba(255, 248, 236, 0.78);
+          font-size: 12px;
+          font-weight: 900;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+        }
+
+        #progress-track,
+        #timer-track {
+          height: 5px;
+          border-radius: 0;
+          background: rgba(255, 248, 236, 0.18);
+        }
+
+        #progress-segments,
+        #progress-track {
+          gap: 5px;
+        }
+
+        .progress-segment {
+          min-width: 9px;
+          border-radius: 0;
+          background: rgba(255, 248, 236, 0.18);
+        }
+
+        .progress-segment:hover {
+          background: rgba(255, 248, 236, 0.3);
+        }
+
+        .progress-segment.is-current {
+          box-shadow: 0 0 0 1px rgba(255, 248, 236, 0.62);
+        }
+
+        .progress-segment-fill {
+          border-radius: 0;
+          background: linear-gradient(90deg, #a45b2d, #d9823a);
+        }
+
+        #timer-fill {
+          border-radius: 0;
+          background: linear-gradient(90deg, #f0c36a, #d9823a);
+        }
+
+        #timer-count,
+        #progress-count {
+          color: #fff8ec;
+          font-size: 13px;
+          font-weight: 900;
+          letter-spacing: 0.08em;
+        }
+
+        #timer-count {
+          color: #f0c36a;
+        }
+
+        .catalog-loader {
+          background:
+            radial-gradient(circle at 18% 16%, rgba(164, 91, 45, 0.22), transparent 34%),
+            linear-gradient(135deg, #fbf3e8 0%, #ead9c6 100%);
+          color: var(--fg);
+        }
+
+        .catalog-loader-card {
+          border: 1px solid rgba(29, 23, 18, 0.3);
+          border-radius: 0;
+          background: rgba(255, 248, 236, 0.9);
+          box-shadow: var(--shadow);
+          backdrop-filter: none;
+        }
+
+        .catalog-loader h1 {
+          max-width: 10ch;
+          margin-inline: auto;
+          color: var(--fg);
+          font-size: clamp(42px, 8vw, 112px);
+          font-weight: 900;
+          line-height: 0.88;
+          letter-spacing: -0.08em;
+          text-transform: lowercase;
+        }
+
+        .catalog-loader p {
+          color: var(--muted);
+          font-weight: 700;
+        }
+
+        .catalog-loader button {
+          border: 1px solid var(--fg);
+          border-radius: 999px;
+          background: var(--fg);
+          color: #fff8ec;
+          box-shadow: 6px 6px 0 rgba(29, 23, 18, 0.16);
+          font-weight: 900;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+        }
+
+        .catalog-loader button:hover {
+          background: var(--accent);
+          border-color: var(--accent);
+        }
+
+        .media-viewer {
+          background: rgba(23, 18, 15, 0.9);
+          backdrop-filter: blur(8px);
+        }
+
+        .media-viewer-close {
+          border: 1px solid #fff8ec;
+          border-radius: 50%;
+          background: #fff8ec;
+          color: var(--fg);
+          box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.22);
+        }
+
+        .media-viewer-close:hover {
+          border-color: var(--accent-soft);
+          background: var(--accent-soft);
+          color: #fff8ec;
+        }
+
+        .media-viewer-img,
+        .media-viewer-video {
+          border: 1px solid rgba(255, 248, 236, 0.36);
+          background: #17120f;
+          box-shadow: 18px 18px 0 rgba(0, 0, 0, 0.28);
+        }
+
+        @media (max-width: 760px) {
+          :root {
+            --slide-margin: 4%;
+            --content-pad-x: clamp(16px, 5vw, 28px);
+          }
+
+          .talk-identity {
+            grid-template-columns: 1fr;
+          }
+
+          .project-author {
+            text-align: left;
+          }
+
+          .cinematic-banner {
+            width: auto;
+            right: 5%;
+            min-height: 48vh;
+          }
+        }
+      </style>`;
+
+    function failOpenIndex(message) {
+      document.body.innerHTML = `
+        <main class="bootstrap-card">
+          <p class="bootstrap-kicker">Fallback</p>
+          <h1>design.html</h1>
+          <p>${message}</p>
+          <p>Откройте файл через локальный сервер, чтобы браузер разрешил загрузить index.html и применить редизайн.</p>
+        </main>
+      `;
+    }
+
+    fetch('index.html', { cache: 'no-store' })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('HTTP ' + response.status);
+        }
+        return response.text();
+      })
+      .then((source) => {
+        const redesigned = source
+          .replace('<html lang="ru">', '<html lang="ru" data-design="vershina-service">')
+          .replace(/<title>.*?<\/title>/i, '<title>AI Fun · Vershina Service Design</title>')
+          .replace('</head>', DESIGN_CSS + '\n</head>');
+
+        document.open();
+        document.write(redesigned);
+        document.close();
+      })
+      .catch((error) => {
+        failOpenIndex('Не удалось автоматически загрузить index.html: ' + error.message);
+      });
+  </script>
+</body>
+</html>
