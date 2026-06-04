@@ -1016,6 +1016,34 @@
       }
     }
 
+    function inlineSvgToImageSrc(svg) {
+      if (!svg || svg.tagName?.toLowerCase() !== 'svg') return '';
+      const clone = svg.cloneNode(true);
+      if (!clone.getAttribute('xmlns')) {
+        clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+      }
+      if (!clone.getAttribute('xmlns:xlink')) {
+        clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+      }
+
+      const vb = svg.viewBox?.baseVal;
+      if (vb && vb.width > 0 && vb.height > 0) {
+        if (!clone.getAttribute('width')) clone.setAttribute('width', String(vb.width));
+        if (!clone.getAttribute('height')) clone.setAttribute('height', String(vb.height));
+      }
+
+      const serialized = new XMLSerializer().serializeToString(clone);
+      return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(serialized)}`;
+    }
+
+    function mediaViewerSource(media) {
+      if (!media) return '';
+      if (media.tagName?.toLowerCase() === 'svg') {
+        return inlineSvgToImageSrc(media);
+      }
+      return media.currentSrc || media.src || media.getAttribute('src') || '';
+    }
+
     function setupMediaViewer() {
       deck.addEventListener('click', (e) => {
         if (e.target.closest('.slide-media-expand')) return;
@@ -1026,7 +1054,7 @@
 
         e.preventDefault();
         e.stopPropagation();
-        openMediaViewer(media.currentSrc || media.src, 'img');
+        openMediaViewer(mediaViewerSource(media), 'img');
       });
 
       mediaViewerClose.addEventListener('click', (e) => {
@@ -1972,7 +2000,7 @@
 
     function openSlideMediaFullscreen(media) {
       if (!media) return;
-      const src = media.currentSrc || media.src;
+      const src = mediaViewerSource(media);
       if (!src) return;
       if (media.tagName === 'VIDEO') {
         openMediaViewer(src, 'video', {
@@ -1985,7 +2013,7 @@
     }
 
     function wrapSlideMedia(slideEl) {
-      slideEl.querySelectorAll('.slide-body img, .slide-body svg, .slide-body video, .demo-media img, .demo-media video').forEach((media) => {
+      slideEl.querySelectorAll('.slide-body img, .slide-body svg, .slide-body video, .demo-media img, .demo-media svg, .demo-media video').forEach((media) => {
         if (media.closest('.slide-media-wrap') || media.classList.contains('bg-video')) return;
 
         const wrap = document.createElement('div');
