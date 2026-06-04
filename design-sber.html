@@ -1,0 +1,3268 @@
+<!DOCTYPE html>
+<html lang="ru" data-design="sberbank">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Fun · Sber Design</title>
+  <style>
+    :root {
+      --bg: #f4f3ef;
+      --bg-tint: #eae8e2;
+      --fg: #121212;
+      --muted: #5a5a56;
+      --accent: #0057ff;
+      --accent-soft: #3d7dff;
+      --accent-dim: rgba(0, 87, 255, 0.12);
+      --line: rgba(18, 18, 18, 0.12);
+      --overlay: rgba(8, 8, 12, 0.68);
+      --font: "Segoe UI", system-ui, -apple-system, sans-serif;
+      --bar-h: 78px;
+      --slide-margin: 5%;
+      --radius: 10px;
+      --radius-lg: 16px;
+      --surface: rgba(255, 255, 255, 0.58);
+      --surface-strong: rgba(255, 255, 255, 0.78);
+      --shadow: 0 12px 40px rgba(18, 18, 18, 0.09);
+      --shadow-soft: 0 4px 16px rgba(18, 18, 18, 0.06);
+      --content-pad-x: clamp(20px, 3vw, 52px);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: var(--font);
+      background: #000;
+      color: var(--fg);
+      user-select: none;
+    }
+
+    #deck {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s ease;
+    }
+
+    .slide.active {
+      opacity: 1;
+      pointer-events: auto;
+      z-index: 2;
+    }
+
+    /* 5% поля от края экрана (над progress-bar) */
+    .slide-margin-box {
+      position: absolute;
+      top: var(--slide-margin);
+      left: var(--slide-margin);
+      right: var(--slide-margin);
+      bottom: calc(var(--bar-h) + var(--slide-margin));
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-height: 0;
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(255, 255, 255, 0.42);
+      background: rgba(255, 255, 255, 0.28);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: var(--shadow);
+    }
+
+    .slide-fit-host {
+      flex: 1 1 auto;
+      min-height: 0;
+      width: 100%;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: flex-start;
+    }
+
+    .slide-fit-content {
+      width: 100%;
+      max-width: 100%;
+      transform-origin: top center;
+      will-change: transform;
+    }
+
+    .slide.content .slide-fit-content,
+    .slide.demo .slide-fit-content {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 0;
+      height: 100%;
+    }
+
+    .slide-body-fit {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      padding: 0 clamp(10px, 1.8vw, 28px) clamp(8px, 1.2vh, 16px);
+    }
+
+    .slide-body-fit.is-compact {
+      justify-content: center;
+      align-items: center;
+      padding: clamp(10px, 1.8vh, 24px) clamp(20px, 4vw, 56px);
+    }
+
+    .slide-body-fit.is-compact > .slide-body {
+      width: 100%;
+      max-width: min(920px, 100%);
+      padding: clamp(18px, 2.4vh, 32px) clamp(22px, 2.8vw, 40px);
+      background: var(--surface);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-soft), inset 0 1px 0 rgba(255, 255, 255, 0.62);
+    }
+
+    .slide-body-fit > .slide-body {
+      transform-origin: top center;
+    }
+
+    .slide-body-fit.is-compact > .slide-body {
+      transform-origin: center center;
+    }
+
+    /* демо-слайды: видео/картинка занимают оставшуюся высоту */
+    .slide.demo .slide-fit-content {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .slide.demo .demo-body {
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+
+    .slide.demo .demo-media {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .slide.demo .demo-media video {
+      width: auto;
+      height: auto;
+      max-width: none;
+      max-height: none;
+      object-fit: contain;
+      cursor: default;
+    }
+
+    .slide.demo .demo-media img {
+      width: auto;
+      height: auto;
+      max-width: none;
+      max-height: none;
+      object-fit: contain;
+      cursor: zoom-in;
+    }
+
+    /* —— полноэкранный просмотр изображений —— */
+    .media-viewer {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(6, 6, 10, 0.88);
+      backdrop-filter: blur(10px);
+      padding: 2vh 2vw;
+    }
+
+    .media-viewer[hidden] {
+      display: none !important;
+    }
+
+    .media-viewer-close {
+      position: absolute;
+      top: 1.2vh;
+      right: 1.5vw;
+      z-index: 1;
+      width: 48px;
+      height: 48px;
+      border: 2px solid rgba(255, 255, 255, 0.35);
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.45);
+      color: #fff;
+      font-size: 28px;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .media-viewer-close:hover {
+      border-color: #fff;
+      background: rgba(0, 0, 0, 0.65);
+    }
+
+    .media-viewer-img,
+    .media-viewer-video {
+      width: auto;
+      height: auto;
+      max-width: 96vw;
+      max-height: 92vh;
+      object-fit: contain;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      background: #111;
+    }
+
+    /* —— шапка проекта + шаги —— */
+    .talk-header {
+      flex: 0 0 auto;
+      padding: clamp(12px, 1.5vh, 18px) var(--content-pad-x) clamp(10px, 1.2vh, 14px);
+      border-bottom: 1px solid rgba(18, 18, 18, 0.1);
+      background: var(--surface-strong);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      position: relative;
+    }
+
+    .talk-header::after {
+      content: "";
+      position: absolute;
+      left: var(--content-pad-x);
+      bottom: -1px;
+      width: min(28%, 220px);
+      height: 3px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-soft));
+    }
+
+    .talk-identity {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.35em 1.5em;
+    }
+
+    .project-title {
+      font-size: 28px;
+      font-weight: 900;
+      line-height: 1.06;
+      letter-spacing: -0.025em;
+    }
+
+    .talk-titles {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .project-author {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--muted);
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+
+    .talk-step {
+      display: block;
+      margin: 0.3em 0 0;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: 0.02em;
+      line-height: 1.2;
+      text-transform: none;
+    }
+
+    /* —— контентные слайды —— */
+    .slide.content {
+      background:
+        radial-gradient(90% 70% at 100% 0%, rgba(0, 87, 255, 0.09) 0%, transparent 52%),
+        radial-gradient(70% 55% at 0% 100%, rgba(255, 138, 0, 0.05) 0%, transparent 48%),
+        linear-gradient(165deg, var(--bg) 0%, var(--bg-tint) 100%);
+    }
+
+    .slide-body {
+      flex: 0 0 auto;
+      overflow: hidden;
+      padding: 0.8vh 0 0.4vh;
+      font-size: clamp(13px, 1.5vw, 22px);
+      line-height: 1.48;
+      max-width: 100%;
+      color: var(--fg);
+    }
+
+    .slide-body ul, .slide-body ol { margin: 0.55em 0 0.55em 1.15em; }
+    .slide-body li { margin: 0.3em 0; }
+    .slide-body li::marker { color: var(--fg); }
+    .slide-body p { margin: 0.45em 0; }
+    .slide-body strong { font-weight: 800; color: var(--fg); }
+    .slide-body a {
+      color: var(--fg);
+      text-decoration: underline;
+      text-underline-offset: 0.12em;
+    }
+    .slide-body code {
+      font-size: 0.92em;
+      padding: 0.08em 0.35em;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.55);
+      border: 1px solid var(--line);
+      color: var(--fg);
+    }
+
+    .slide-body img,
+    .slide-body svg {
+      display: block;
+      max-width: 100%;
+      max-height: none;
+      height: auto;
+      width: auto;
+      margin: 0;
+      border: 1px solid rgba(255, 255, 255, 0.65);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.82);
+      box-shadow: var(--shadow-soft);
+      cursor: zoom-in;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .slide-body img:hover,
+    .slide-body svg:hover {
+      border-color: var(--accent-soft);
+      box-shadow: 0 10px 32px rgba(0, 87, 255, 0.12);
+    }
+
+    .slide-body video {
+      display: block;
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      max-height: min(52vh, 720px);
+      margin: 0;
+      border: 2px solid var(--line);
+      border-radius: var(--radius);
+      background: #111;
+      box-shadow: var(--shadow);
+      object-fit: contain;
+      cursor: default;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .slide-body video:hover {
+      border-color: var(--accent-soft);
+      box-shadow: 0 10px 32px rgba(0, 87, 255, 0.12);
+    }
+
+    /* обёртка медиа: оригинальные пропорции + кнопка «на весь экран» */
+    .slide-media-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: fit-content;
+      max-width: 100%;
+      max-height: 100%;
+      margin: 0.7em auto;
+    }
+
+    .slide-media-wrap:only-child,
+    .slide-body > .slide-media-wrap {
+      display: flex;
+    }
+
+    .demo-media > .slide-media-wrap {
+      margin: 0;
+      flex: 0 1 auto;
+      min-height: 0;
+      min-width: 0;
+    }
+
+    .slide-media-expand {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      z-index: 2;
+      width: 36px;
+      height: 36px;
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.82);
+      backdrop-filter: blur(8px);
+      color: var(--fg);
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      opacity: 0.92;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .slide-media-expand:hover {
+      opacity: 1;
+      border-color: var(--accent-soft);
+      background: #fff;
+    }
+
+    .slide-body .media-row {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      gap: clamp(12px, 2vw, 28px);
+      margin: 0.6em auto;
+      width: 100%;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .slide-body .media-row + .media-row {
+      margin-top: 0.45em;
+    }
+
+    .slide-body .media-row .media-cell {
+      flex: 1 1 0;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .slide-body .media-row .media-cell img,
+    .slide-body .media-row .media-cell svg {
+      margin: 0;
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      max-height: none;
+      object-fit: contain;
+    }
+
+    .slide-body .media-row .media-cell .slide-media-wrap {
+      width: 100%;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .slide-body .media-row:has(.media-cell:only-child) .media-cell {
+      flex: 0 1 min(72%, 920px);
+    }
+
+    .slide-body table {
+      border-collapse: separate;
+      border-spacing: 0;
+      margin: 0.85em 0;
+      font-size: 0.88em;
+      width: 100%;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-soft);
+      background: rgba(255, 255, 255, 0.42);
+    }
+
+    .slide-body th, .slide-body td {
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      padding: 0.5em 0.75em;
+    }
+
+    .slide-body tr:last-child td { border-bottom: 0; }
+    .slide-body th { background: rgba(18, 18, 18, 0.88); color: #fff; font-weight: 700; }
+    .slide-body td { background: rgba(255, 255, 255, 0.35); }
+    .slide-body tr:nth-child(even) td { background: rgba(255, 255, 255, 0.58); }
+
+    /* —— слайд «?» (Q&A) —— */
+    .slide.qa {
+      background:
+        radial-gradient(90% 70% at 50% 0%, rgba(0, 87, 255, 0.1) 0%, transparent 55%),
+        linear-gradient(165deg, var(--bg) 0%, var(--bg-tint) 100%);
+    }
+
+    .slide-qa-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .slide-qa-mark {
+      font-size: clamp(96px, 24vw, 360px);
+      font-weight: 900;
+      line-height: 1;
+      color: var(--fg);
+      letter-spacing: -0.04em;
+      user-select: none;
+      padding: 0.12em 0.28em;
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.65);
+      box-shadow: var(--shadow);
+    }
+
+    /* —— демо (тот же светлый стиль, что и content) —— */
+    .slide.demo {
+      background:
+        radial-gradient(90% 70% at 0% 100%, rgba(0, 87, 255, 0.09) 0%, transparent 50%),
+        radial-gradient(70% 55% at 100% 0%, rgba(255, 138, 0, 0.05) 0%, transparent 48%),
+        linear-gradient(165deg, var(--bg) 0%, var(--bg-tint) 100%);
+      color: var(--fg);
+    }
+
+    .slide.demo .demo-body {
+      overflow: visible;
+    }
+
+    .slide.demo .slide-fit-host {
+      overflow: visible;
+    }
+
+    .demo-body {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      max-width: 100%;
+    }
+
+    .demo-intro {
+      flex: 0 0 auto;
+      color: var(--fg);
+      font-size: clamp(11px, 1.25vw, 18px);
+      line-height: 1.38;
+      margin-bottom: 0.7vh;
+      overflow: hidden;
+      padding: 0.65em var(--content-pad-x);
+      background: rgba(255, 255, 255, 0.48);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.58);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .demo-intro:empty { display: none; }
+
+    .demo-intro p { margin: 0.35em 0; }
+    .demo-intro li::marker { color: var(--fg); }
+    .demo-intro a { color: var(--fg); text-decoration: underline; }
+    .demo-intro code {
+      color: var(--fg);
+      background: rgba(18, 18, 18, 0.06);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: 0.08em 0.35em;
+    }
+
+    .demo-media {
+      flex: 1 1 0;
+      min-height: 0;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .demo-media img,
+    .demo-media video {
+      display: block;
+      border: 2px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .demo-media video {
+      background: #111;
+    }
+
+    .demo-media .slide-media-wrap img,
+    .demo-media .slide-media-wrap video {
+      border: none;
+      box-shadow: none;
+      border-radius: calc(var(--radius) - 2px);
+    }
+
+    .demo-media .slide-media-wrap {
+      border: 1px solid rgba(255, 255, 255, 0.65);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-soft);
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.35);
+      backdrop-filter: blur(8px);
+    }
+
+    .demo-media .slide-media-wrap video {
+      background: #111;
+    }
+
+    /* —— welcome / questions —— */
+    .slide.cinematic {
+      color: #fff;
+      align-items: stretch;
+      justify-content: flex-start;
+    }
+
+    .bg-video-stack {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      background: #000;
+    }
+
+    .bg-video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      z-index: 0;
+      transition: none;
+      pointer-events: none;
+    }
+
+    /* нижний слой — всегда на полной яркости */
+    .bg-video.is-base {
+      opacity: 1;
+      z-index: 1;
+    }
+
+    /* верхний слой — только проявление 0→1, без затухания нижнего */
+    .bg-video.is-overlay {
+      z-index: 2;
+      opacity: 0;
+      transition: opacity 1s ease-in-out;
+      will-change: opacity;
+    }
+
+    .bg-video.is-overlay.reveal {
+      opacity: 1;
+    }
+
+    .cinematic-banner {
+      position: absolute;
+      top: var(--slide-margin);
+      left: var(--slide-margin);
+      right: var(--slide-margin);
+      z-index: 2;
+      background: rgba(8, 8, 14, 0.78);
+      border-bottom: 3px solid rgba(255, 255, 255, 0.15);
+      padding: 2.2vh 2vw 2.4vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    .cinematic-content {
+      max-width: 1100px;
+      width: 100%;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .cinematic h1 {
+      font-size: clamp(22px, 3.6vw, 54px);
+      font-weight: 900;
+      line-height: 1.08;
+      margin-bottom: 0.2em;
+      text-shadow: 0 2px 24px rgba(0, 0, 0, 0.45);
+    }
+
+    .cinematic .subtitle {
+      font-size: clamp(14px, 1.65vw, 24px);
+      font-weight: 500;
+      color: #e8e8e8;
+      text-shadow: 0 1px 12px rgba(0, 0, 0, 0.35);
+    }
+
+    .cinematic-mark {
+      font-size: clamp(120px, 28vw, 420px);
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      color: #fff;
+      text-shadow: 0 4px 32px rgba(0, 0, 0, 0.5);
+    }
+
+    .cinematic-mark-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+    }
+
+    .slide.cinematic-qa .cinematic-banner {
+      top: var(--slide-margin);
+      left: var(--slide-margin);
+      right: var(--slide-margin);
+      bottom: calc(var(--bar-h) + var(--slide-margin));
+      border-bottom: none;
+      background: rgba(8, 8, 14, 0.52);
+    }
+
+    .hint {
+      position: fixed;
+      bottom: 58px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.45);
+      pointer-events: none;
+    }
+
+    #progress-bar {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 30;
+      background: linear-gradient(180deg, rgba(18, 18, 18, 0.82) 0%, rgba(8, 8, 10, 0.96) 100%);
+      backdrop-filter: blur(8px);
+      color: #fff;
+      padding: 8px 18px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      height: var(--bar-h);
+      justify-content: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    #progress-label {
+      color: #ccc;
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.2;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .bar-line {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .bar-line[hidden] {
+      display: none;
+    }
+
+    #timer-track {
+      flex: 1 1 auto;
+      min-width: 0;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.16);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    #progress-track {
+      flex: 1 1 auto;
+      min-width: 0;
+      height: 4px;
+      display: flex;
+      align-items: stretch;
+      gap: 3px;
+      background: transparent;
+    }
+
+    #progress-segments {
+      display: flex;
+      align-items: stretch;
+      gap: 3px;
+      width: 100%;
+      height: 100%;
+    }
+
+    .progress-segment {
+      flex: 1 1 0;
+      min-width: 6px;
+      height: 100%;
+      padding: 0;
+      border: 0;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.16);
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: background 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .progress-segment:hover {
+      background: rgba(255, 255, 255, 0.24);
+    }
+
+    .progress-segment.is-current {
+      box-shadow: 0 0 0 1px rgba(61, 125, 255, 0.55);
+    }
+
+    .progress-segment-fill {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-soft));
+      border-radius: inherit;
+      transition: width 0.25s ease;
+      pointer-events: none;
+    }
+
+    .progress-segment.is-done .progress-segment-fill {
+      width: 100%;
+    }
+
+    #timer-fill {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #ff8a00, #ffc247);
+      border-radius: 999px;
+      transition: width 0.12s linear;
+    }
+
+    #timer-count,
+    #progress-count {
+      flex: 0 0 auto;
+      font-size: 13px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+      min-width: 3.2em;
+      text-align: right;
+    }
+
+    #timer-count {
+      color: #ffc247;
+      min-width: 9.5em;
+    }
+
+    #progress-count {
+      color: var(--accent-soft);
+    }
+
+    .catalog-loader {
+      position: fixed;
+      inset: 0;
+      z-index: 300;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 5vw;
+      background: radial-gradient(120% 90% at 50% 0%, rgba(0, 87, 255, 0.22), transparent 55%), rgba(8, 8, 12, 0.94);
+      color: #fff;
+      text-align: center;
+    }
+
+    .catalog-loader[hidden] { display: none !important; }
+
+    .catalog-loader-card {
+      width: min(720px, 100%);
+      padding: clamp(24px, 4vw, 48px);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 14px;
+      background: rgba(18, 18, 24, 0.82);
+      box-shadow: 0 24px 90px rgba(0, 0, 0, 0.42);
+      backdrop-filter: blur(12px);
+    }
+
+    .catalog-loader h1 {
+      margin-bottom: 0.35em;
+      font-size: clamp(26px, 4vw, 48px);
+      line-height: 1.08;
+    }
+
+    .catalog-loader p {
+      margin: 0.65em auto 0;
+      max-width: 56ch;
+      color: rgba(255, 255, 255, 0.76);
+      font-size: clamp(14px, 1.6vw, 20px);
+      line-height: 1.45;
+    }
+
+    .catalog-loader button {
+      margin-top: 1.4em;
+      padding: 0.8em 1.25em;
+      border: 0;
+      border-radius: 999px;
+      background: #fff;
+      color: #121212;
+      font: 800 16px var(--font);
+      cursor: pointer;
+    }
+
+    .catalog-loader button:hover { background: #e8efff; }
+
+    .catalog-loader .catalog-error {
+      color: #ffd1d1;
+    }
+
+  </style>
+  <style id="sberbank-redesign">
+    :root {
+      --bg: #f2f7f4;
+      --bg-tint: #e8f3ed;
+      --fg: #101820;
+      --muted: #607066;
+      --accent: #12a038;
+      --accent-soft: #21c55d;
+      --accent-dim: rgba(18, 160, 56, 0.14);
+      --line: rgba(16, 24, 32, 0.1);
+      --overlay: rgba(10, 20, 18, 0.64);
+      --font: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      --bar-h: 82px;
+      --slide-margin: 4.2%;
+      --radius: 24px;
+      --radius-lg: 34px;
+      --surface: rgba(255, 255, 255, 0.72);
+      --surface-strong: rgba(255, 255, 255, 0.92);
+      --shadow: 0 24px 70px rgba(22, 78, 52, 0.14);
+      --shadow-soft: 0 12px 36px rgba(22, 78, 52, 0.1);
+      --content-pad-x: clamp(22px, 3.6vw, 68px);
+      --sber-blue: #00a6ff;
+      --sber-lime: #b8eb2f;
+      --sber-yellow: #ffd54a;
+      --sber-green-dark: #0b6f36;
+    }
+
+    html,
+    body {
+      background: #07140f;
+      color: var(--fg);
+      font-family: var(--font);
+    }
+
+    #deck {
+      background:
+        radial-gradient(circle at 16% 12%, rgba(184, 235, 47, 0.32), transparent 30%),
+        radial-gradient(circle at 82% 10%, rgba(0, 166, 255, 0.2), transparent 28%),
+        radial-gradient(circle at 72% 88%, rgba(18, 160, 56, 0.22), transparent 34%),
+        linear-gradient(135deg, #f7fbf8 0%, #eef7f1 48%, #dff0e7 100%);
+    }
+
+    #deck::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background:
+        linear-gradient(115deg, transparent 0 34%, rgba(18, 160, 56, 0.08) 34% 35%, transparent 35% 100%),
+        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.9), transparent 60%);
+      opacity: 0.74;
+    }
+
+    #deck::after {
+      content: "";
+      position: fixed;
+      right: -10vw;
+      top: -14vw;
+      z-index: 1;
+      width: min(46vw, 640px);
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: conic-gradient(from 210deg, var(--accent), var(--sber-lime), var(--sber-blue), var(--accent));
+      filter: blur(34px);
+      opacity: 0.18;
+      pointer-events: none;
+    }
+
+    .slide {
+      isolation: isolate;
+      transition: opacity 0.36s ease, transform 0.36s ease;
+    }
+
+    .slide.content,
+    .slide.demo,
+    .slide.qa {
+      background:
+        radial-gradient(circle at 18% 16%, rgba(184, 235, 47, 0.24), transparent 28%),
+        radial-gradient(circle at 88% 16%, rgba(0, 166, 255, 0.15), transparent 24%),
+        linear-gradient(135deg, #f8fcf8 0%, #edf7f1 52%, #dcefe6 100%);
+    }
+
+    .slide.content::after,
+    .slide.demo::after,
+    .slide.qa::after {
+      content: "";
+      position: absolute;
+      z-index: 0;
+      right: calc(var(--slide-margin) + 8px);
+      bottom: calc(var(--bar-h) + var(--slide-margin) + 10px);
+      width: min(24vw, 320px);
+      aspect-ratio: 1;
+      border-radius: 42% 58% 48% 52%;
+      background:
+        radial-gradient(circle at 32% 32%, rgba(255, 255, 255, 0.82), transparent 30%),
+        linear-gradient(135deg, rgba(18, 160, 56, 0.22), rgba(0, 166, 255, 0.14));
+      filter: blur(1px);
+      opacity: 0.52;
+      pointer-events: none;
+    }
+
+    .slide-margin-box {
+      z-index: 2;
+      border: 1px solid rgba(255, 255, 255, 0.78);
+      border-radius: var(--radius-lg);
+      background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(246, 252, 248, 0.78)),
+        radial-gradient(circle at 10% 0%, rgba(184, 235, 47, 0.16), transparent 32%);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px) saturate(1.12);
+      -webkit-backdrop-filter: blur(18px) saturate(1.12);
+      overflow: hidden;
+    }
+
+    .slide-margin-box::before {
+      content: "SBER AI FUN";
+      position: absolute;
+      top: clamp(14px, 1.7vw, 24px);
+      right: clamp(18px, 2.2vw, 34px);
+      z-index: 4;
+      padding: 0.48em 0.82em;
+      border: 1px solid rgba(18, 160, 56, 0.18);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--sber-green-dark);
+      box-shadow: 0 8px 20px rgba(18, 160, 56, 0.08);
+      font-size: clamp(10px, 0.9vw, 13px);
+      font-weight: 900;
+      letter-spacing: 0.14em;
+    }
+
+    .slide-margin-box::after {
+      content: "";
+      position: absolute;
+      inset: auto -12% -34% auto;
+      width: min(34vw, 430px);
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: conic-gradient(from 180deg, var(--accent), var(--sber-lime), var(--sber-blue), var(--accent));
+      filter: blur(28px);
+      opacity: 0.11;
+      pointer-events: none;
+    }
+
+    .slide-fit-host,
+    .slide-fit-content,
+    .slide-body-fit,
+    .slide-body,
+    .demo-body,
+    .demo-media,
+    .talk-header {
+      position: relative;
+      z-index: 2;
+    }
+
+    .slide-body-fit {
+      padding: clamp(12px, 2vh, 28px) var(--content-pad-x) clamp(16px, 2.4vh, 34px);
+    }
+
+    .slide-body-fit.is-compact {
+      justify-content: center;
+      align-items: center;
+      padding: clamp(18px, 3vh, 42px) var(--content-pad-x);
+    }
+
+    .slide-body-fit.is-compact > .slide-body {
+      border: 1px solid rgba(18, 160, 56, 0.12);
+      border-radius: var(--radius-lg);
+      background: rgba(255, 255, 255, 0.78);
+      box-shadow: var(--shadow-soft);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+
+    .talk-header {
+      padding: clamp(18px, 2.8vh, 40px) var(--content-pad-x) clamp(12px, 1.8vh, 24px);
+      border-bottom: 1px solid rgba(18, 160, 56, 0.12);
+      background:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.9) 0%, rgba(242, 250, 245, 0.76) 100%);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+
+    .talk-header::after {
+      left: var(--content-pad-x);
+      bottom: -2px;
+      width: min(38vw, 460px);
+      height: 4px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), var(--sber-lime), var(--sber-blue));
+    }
+
+    .talk-identity {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: end;
+      gap: 12px clamp(18px, 4vw, 64px);
+    }
+
+    .project-title {
+      color: var(--fg);
+      font-size: clamp(30px, 4.8vw, 76px);
+      font-weight: 900;
+      line-height: 0.94;
+      letter-spacing: -0.055em;
+    }
+
+    .project-author {
+      align-self: start;
+      max-width: 28ch;
+      padding: 0.6em 0.9em;
+      border: 1px solid rgba(18, 160, 56, 0.15);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.68);
+      color: var(--sber-green-dark);
+      font-size: clamp(12px, 1vw, 15px);
+      font-weight: 850;
+      letter-spacing: 0.05em;
+      white-space: normal;
+      text-align: right;
+    }
+
+    .talk-step {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.62em;
+      margin-top: 0.8em;
+      padding: 0.48em 0.72em;
+      border-radius: 999px;
+      background: rgba(18, 160, 56, 0.1);
+      color: var(--sber-green-dark);
+      font-size: clamp(12px, 1.08vw, 16px);
+      font-weight: 850;
+      letter-spacing: 0.04em;
+      line-height: 1.12;
+    }
+
+    .talk-step::before {
+      content: "";
+      display: inline-block;
+      width: 0.72em;
+      height: 0.72em;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--sber-lime));
+      box-shadow: 0 0 0 5px rgba(18, 160, 56, 0.12);
+    }
+
+    .slide-body {
+      color: var(--fg);
+      font-size: clamp(14px, 1.5vw, 23px);
+      line-height: 1.43;
+    }
+
+    .slide-body h1,
+    .slide-body h2,
+    .slide-body h3 {
+      max-width: 13ch;
+      margin: 0.12em 0 0.36em;
+      color: var(--fg);
+      font-weight: 900;
+      line-height: 0.96;
+      letter-spacing: -0.055em;
+    }
+
+    .slide-body h1 { font-size: clamp(48px, 7.5vw, 122px); }
+    .slide-body h2 { font-size: clamp(38px, 5.8vw, 92px); }
+    .slide-body h3 { font-size: clamp(28px, 4.1vw, 66px); }
+
+    .slide-body p {
+      margin: 0.56em 0;
+      max-width: 74ch;
+    }
+
+    .slide-body strong {
+      color: var(--sber-green-dark);
+      font-weight: 900;
+    }
+
+    .slide-body a {
+      color: var(--accent);
+      font-weight: 850;
+      text-decoration-color: rgba(18, 160, 56, 0.45);
+      text-decoration-thickness: 2px;
+      text-underline-offset: 0.16em;
+    }
+
+    .slide-body ul,
+    .slide-body ol {
+      display: grid;
+      gap: 0.46em;
+      margin: 0.76em 0 0.76em 1.22em;
+    }
+
+    .slide-body li::marker {
+      color: var(--accent);
+      font-weight: 900;
+    }
+
+    .slide-body code,
+    .demo-intro code {
+      border: 1px solid rgba(18, 160, 56, 0.18);
+      border-radius: 10px;
+      background: rgba(18, 160, 56, 0.08);
+      color: var(--sber-green-dark);
+      font-weight: 800;
+    }
+
+    .slide-body blockquote {
+      margin: 1em 0;
+      padding: 1em 1.15em;
+      border: 1px solid rgba(18, 160, 56, 0.14);
+      border-left: 7px solid var(--accent);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.7);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .slide-body table {
+      border: 1px solid rgba(18, 160, 56, 0.14);
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.76);
+      box-shadow: var(--shadow-soft);
+      overflow: hidden;
+    }
+
+    .slide-body th,
+    .slide-body td {
+      border-bottom: 1px solid rgba(16, 24, 32, 0.08);
+      padding: 0.64em 0.86em;
+    }
+
+    .slide-body th {
+      background: linear-gradient(90deg, var(--sber-green-dark), var(--accent));
+      color: #fff;
+      font-weight: 900;
+    }
+
+    .slide-body td {
+      background: rgba(255, 255, 255, 0.68);
+    }
+
+    .slide-body tr:nth-child(even) td {
+      background: rgba(236, 248, 241, 0.88);
+    }
+
+    .slide-body img,
+    .slide-body svg,
+    .slide-body video,
+    .demo-media img,
+    .demo-media svg,
+    .demo-media video {
+      border: 1px solid rgba(18, 160, 56, 0.16);
+      border-radius: 26px;
+      background: #fff;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .slide-body video,
+    .demo-media video {
+      background: #07140f;
+    }
+
+    .slide-body img:hover,
+    .slide-body svg:hover,
+    .slide-body video:hover {
+      border-color: rgba(18, 160, 56, 0.42);
+      box-shadow: 0 18px 48px rgba(18, 160, 56, 0.16);
+    }
+
+    .slide-media-expand {
+      top: 12px;
+      right: 12px;
+      width: 42px;
+      height: 42px;
+      border: 1px solid rgba(18, 160, 56, 0.18);
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.92);
+      color: var(--sber-green-dark);
+      box-shadow: 0 10px 24px rgba(16, 24, 32, 0.12);
+      font-weight: 900;
+    }
+
+    .slide-media-expand:hover {
+      border-color: transparent;
+      background: linear-gradient(135deg, var(--accent), var(--accent-soft));
+      color: #fff;
+    }
+
+    .demo-intro {
+      margin: 0 0 clamp(8px, 1.1vh, 18px);
+      padding: 0.86em 1.08em;
+      border: 1px solid rgba(18, 160, 56, 0.12);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--fg);
+      box-shadow: var(--shadow-soft);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      font-size: clamp(12px, 1.18vw, 18px);
+    }
+
+    .demo-media .slide-media-wrap {
+      border: 1px solid rgba(18, 160, 56, 0.14);
+      border-radius: 30px;
+      background: rgba(255, 255, 255, 0.76);
+      box-shadow: var(--shadow-soft);
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .slide-qa-mark {
+      border: 1px solid rgba(18, 160, 56, 0.16);
+      border-radius: 44px;
+      background:
+        radial-gradient(circle at 25% 18%, rgba(184, 235, 47, 0.28), transparent 30%),
+        #fff;
+      color: var(--accent);
+      box-shadow: var(--shadow);
+      font-size: clamp(120px, 27vw, 420px);
+    }
+
+    .slide.cinematic {
+      color: #fff;
+      background: #07140f;
+    }
+
+    .bg-video-stack {
+      background:
+        radial-gradient(circle at 18% 18%, rgba(18, 160, 56, 0.36), transparent 30%),
+        radial-gradient(circle at 82% 14%, rgba(0, 166, 255, 0.22), transparent 30%),
+        #07140f;
+    }
+
+    .bg-video {
+      filter: saturate(0.96) contrast(1.04) brightness(0.72);
+    }
+
+    .slide.cinematic::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, rgba(7, 20, 15, 0.88) 0%, rgba(7, 20, 15, 0.24) 58%, rgba(7, 20, 15, 0.72) 100%),
+        radial-gradient(circle at 16% 16%, rgba(18, 160, 56, 0.38), transparent 30%);
+    }
+
+    .cinematic-banner {
+      top: 7%;
+      left: 5%;
+      right: auto;
+      width: min(820px, 74vw);
+      min-height: min(58vh, 560px);
+      justify-content: flex-start;
+      align-items: flex-end;
+      padding: clamp(30px, 5vw, 78px);
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.24);
+      border-radius: 38px;
+      background:
+        radial-gradient(circle at 16% 10%, rgba(184, 235, 47, 0.22), transparent 32%),
+        rgba(7, 20, 15, 0.66);
+      box-shadow: 0 32px 90px rgba(0, 0, 0, 0.26);
+      backdrop-filter: blur(14px);
+      text-align: left;
+    }
+
+    .cinematic-content {
+      margin: 0;
+      text-align: left;
+    }
+
+    .cinematic h1 {
+      max-width: 9.2ch;
+      margin: 0;
+      color: #fff;
+      font-size: clamp(54px, 9.6vw, 150px);
+      font-weight: 900;
+      line-height: 0.88;
+      letter-spacing: -0.075em;
+      text-shadow: 0 16px 44px rgba(0, 0, 0, 0.26);
+    }
+
+    .cinematic .subtitle {
+      max-width: 46ch;
+      margin-top: 1.18em;
+      color: rgba(255, 255, 255, 0.82);
+      font-size: clamp(17px, 1.7vw, 28px);
+      font-weight: 650;
+      line-height: 1.3;
+      text-shadow: none;
+    }
+
+    .slide.cinematic-qa .cinematic-banner {
+      inset: var(--slide-margin) var(--slide-margin) calc(var(--bar-h) + var(--slide-margin));
+      width: auto;
+      min-height: auto;
+      justify-content: center;
+      align-items: center;
+      background: rgba(7, 20, 15, 0.58);
+    }
+
+    .cinematic-mark {
+      color: #fff;
+      font-size: clamp(150px, 30vw, 470px);
+      font-weight: 900;
+      text-shadow: 0 20px 60px rgba(0, 0, 0, 0.26);
+    }
+
+    .hint {
+      bottom: calc(var(--bar-h) + 10px);
+      color: rgba(11, 111, 54, 0.48);
+      font-size: 12px;
+      font-weight: 850;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    #progress-bar {
+      height: var(--bar-h);
+      padding: 10px clamp(18px, 3vw, 44px) 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.5);
+      background:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.92), rgba(242, 250, 245, 0.86)),
+        radial-gradient(circle at 5% 0%, rgba(184, 235, 47, 0.22), transparent 32%);
+      color: var(--fg);
+      box-shadow: 0 -18px 50px rgba(22, 78, 52, 0.12);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+    #progress-label {
+      color: rgba(16, 24, 32, 0.68);
+      font-size: 12px;
+      font-weight: 850;
+      letter-spacing: 0.04em;
+    }
+
+    #progress-track,
+    #timer-track {
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(16, 24, 32, 0.08);
+    }
+
+    #progress-segments,
+    #progress-track {
+      gap: 5px;
+    }
+
+    .progress-segment {
+      min-width: 9px;
+      border-radius: 999px;
+      background: rgba(16, 24, 32, 0.08);
+    }
+
+    .progress-segment:hover {
+      background: rgba(18, 160, 56, 0.16);
+    }
+
+    .progress-segment.is-current {
+      box-shadow: 0 0 0 2px rgba(18, 160, 56, 0.2);
+    }
+
+    .progress-segment-fill,
+    #timer-fill {
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), var(--sber-lime), var(--sber-blue));
+    }
+
+    #timer-count,
+    #progress-count {
+      color: var(--sber-green-dark);
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+    }
+
+    #timer-count {
+      color: #6d8a00;
+    }
+
+    .catalog-loader {
+      background:
+        radial-gradient(circle at 18% 16%, rgba(184, 235, 47, 0.32), transparent 34%),
+        radial-gradient(circle at 82% 10%, rgba(0, 166, 255, 0.16), transparent 30%),
+        linear-gradient(135deg, #f8fcf8 0%, #dff0e7 100%);
+      color: var(--fg);
+    }
+
+    .catalog-loader-card {
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      border-radius: 34px;
+      background: rgba(255, 255, 255, 0.82);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .catalog-loader h1 {
+      max-width: 11ch;
+      margin-inline: auto;
+      color: var(--fg);
+      font-size: clamp(42px, 7.8vw, 112px);
+      font-weight: 900;
+      line-height: 0.92;
+      letter-spacing: -0.06em;
+    }
+
+    .catalog-loader p {
+      color: var(--muted);
+      font-weight: 650;
+    }
+
+    .catalog-loader button {
+      border: 0;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-soft));
+      color: #fff;
+      box-shadow: 0 14px 32px rgba(18, 160, 56, 0.22);
+      font-weight: 900;
+    }
+
+    .catalog-loader button:hover {
+      background: linear-gradient(90deg, var(--sber-green-dark), var(--accent));
+    }
+
+    .media-viewer {
+      background: rgba(7, 20, 15, 0.88);
+      backdrop-filter: blur(12px);
+    }
+
+    .media-viewer-close {
+      border: 1px solid rgba(255, 255, 255, 0.38);
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.92);
+      color: var(--sber-green-dark);
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.18);
+    }
+
+    .media-viewer-close:hover {
+      border-color: transparent;
+      background: linear-gradient(135deg, var(--accent), var(--accent-soft));
+      color: #fff;
+    }
+
+    .media-viewer-img,
+    .media-viewer-video {
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 28px;
+      background: #07140f;
+      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.28);
+    }
+
+    @media (max-width: 760px) {
+      :root {
+        --slide-margin: 4%;
+        --content-pad-x: clamp(16px, 5vw, 28px);
+      }
+
+      .talk-identity {
+        grid-template-columns: 1fr;
+      }
+
+      .project-author {
+        text-align: left;
+      }
+
+      .cinematic-banner {
+        width: auto;
+        right: 5%;
+        min-height: 48vh;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="deck" aria-live="polite"></div>
+
+  <div id="catalog-loader" class="catalog-loader" role="status" aria-live="polite">
+    <div class="catalog-loader-card">
+      <h1 id="catalog-loader-title">Выберите In Catalog</h1>
+      <p id="catalog-loader-detail">Для локального запуска выберите папку <code>in/</code> или корень проекта. HTML прочитает только явно указанные в Markdown медиа.</p>
+      <button id="catalog-pick" type="button" hidden>Выбрать каталог in/</button>
+      <input id="catalog-file-input" type="file" webkitdirectory multiple hidden>
+    </div>
+  </div>
+  <div class="hint">Колесо / стрелки · клик по медиа — на весь экран · F11</div>
+
+  <div id="progress-bar">
+    <span id="progress-label">—</span>
+    <div class="bar-line" id="timer-line" hidden>
+      <div id="timer-track"><div id="timer-fill"></div></div>
+      <span id="timer-count" aria-label="Осталось на блоке и общее время презентации">7:00 / 62:00</span>
+    </div>
+    <div class="bar-line" id="slide-line">
+      <div id="progress-track"><div id="progress-segments"></div></div>
+      <span id="progress-count">0/0</span>
+    </div>
+  </div>
+
+  <div id="media-viewer" class="media-viewer" hidden aria-hidden="true">
+    <button type="button" class="media-viewer-close" aria-label="Закрыть">&times;</button>
+    <img class="media-viewer-img" alt="" hidden>
+    <video class="media-viewer-video" controls playsinline hidden></video>
+  </div>
+
+  <script>
+    let SLIDES = [];
+    const BLOCK_TIMERS = {};
+    let BLOCK_NAV = [];
+    let timerBlockId = null;
+    let timerRemainingMs = 0;
+    let timerLastTick = 0;
+    let timerRafId = 0;
+
+    const deck = document.getElementById('deck');
+    const progressSegments = document.getElementById('progress-segments');
+    const timerLine = document.getElementById('timer-line');
+    const timerTrack = document.getElementById('timer-track');
+    const timerFill = document.getElementById('timer-fill');
+    const timerCount = document.getElementById('timer-count');
+    const progressLabel = document.getElementById('progress-label');
+    const progressCount = document.getElementById('progress-count');
+    const mediaViewer = document.getElementById('media-viewer');
+    const mediaViewerImg = mediaViewer.querySelector('.media-viewer-img');
+    const mediaViewerVideo = mediaViewer.querySelector('.media-viewer-video');
+    const mediaViewerClose = mediaViewer.querySelector('.media-viewer-close');
+
+    let index = 0;
+    let wheelLocked = false;
+    const BG_CROSSFADE_MS = 1000;
+
+    function isMediaViewerOpen() {
+      return !mediaViewer.hidden;
+    }
+
+    function closeMediaViewer() {
+      mediaViewer.hidden = true;
+      mediaViewer.setAttribute('aria-hidden', 'true');
+      mediaViewerVideo.pause();
+      mediaViewerVideo.removeAttribute('src');
+      mediaViewerVideo.load();
+      mediaViewerVideo.hidden = true;
+      mediaViewerImg.removeAttribute('src');
+      mediaViewerImg.hidden = true;
+    }
+
+    function openMediaViewer(src, kind, opts = {}) {
+      if (!src) return;
+      mediaViewer.hidden = false;
+      mediaViewer.setAttribute('aria-hidden', 'false');
+      if (kind === 'video') {
+        mediaViewerImg.hidden = true;
+        mediaViewerVideo.hidden = false;
+        mediaViewerVideo.src = src;
+        if (typeof opts.currentTime === 'number') {
+          mediaViewerVideo.currentTime = opts.currentTime;
+        }
+        if (opts.autoplay) {
+          mediaViewerVideo.play().catch(() => {});
+        }
+      } else {
+        mediaViewerVideo.hidden = true;
+        mediaViewerImg.hidden = false;
+        mediaViewerImg.src = src;
+      }
+    }
+
+    function inlineSvgToImageSrc(svg) {
+      if (!svg || svg.tagName?.toLowerCase() !== 'svg') return '';
+      const clone = svg.cloneNode(true);
+      if (!clone.getAttribute('xmlns')) {
+        clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+      }
+      if (!clone.getAttribute('xmlns:xlink')) {
+        clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+      }
+
+      const vb = svg.viewBox?.baseVal;
+      if (vb && vb.width > 0 && vb.height > 0) {
+        if (!clone.getAttribute('width')) clone.setAttribute('width', String(vb.width));
+        if (!clone.getAttribute('height')) clone.setAttribute('height', String(vb.height));
+      }
+
+      const serialized = new XMLSerializer().serializeToString(clone);
+      return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(serialized)}`;
+    }
+
+    function mediaViewerSource(media) {
+      if (!media) return '';
+      if (media.tagName?.toLowerCase() === 'svg') {
+        return inlineSvgToImageSrc(media);
+      }
+      return media.currentSrc || media.src || media.getAttribute('src') || '';
+    }
+
+    function setupMediaViewer() {
+      deck.addEventListener('click', (e) => {
+        if (e.target.closest('.slide-media-expand')) return;
+        const media = e.target.closest('.slide img, .slide video, .slide svg');
+        if (!media || !deck.contains(media)) return;
+        if (media.classList.contains('bg-video')) return;
+        if (media.tagName === 'VIDEO') return;
+
+        e.preventDefault();
+        e.stopPropagation();
+        openMediaViewer(mediaViewerSource(media), 'img');
+      });
+
+      mediaViewerClose.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        closeMediaViewer();
+      });
+
+      mediaViewer.addEventListener('click', (e) => {
+        if (e.target === mediaViewer) closeMediaViewer();
+      });
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+
+
+    const catalogLoader = document.getElementById('catalog-loader');
+    const catalogLoaderTitle = document.getElementById('catalog-loader-title');
+    const catalogLoaderDetail = document.getElementById('catalog-loader-detail');
+    const catalogPick = document.getElementById('catalog-pick');
+    const catalogFileInput = document.getElementById('catalog-file-input');
+
+    const VIDEO_EXTS = new Set(['.mp4', '.webm', '.mov', '.m4v']);
+    const IMAGE_EXTS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg']);
+    const MEDIA_EXTS = new Set([...VIDEO_EXTS, ...IMAGE_EXTS]);
+
+    function showLoader(title, detail, opts = {}) {
+      catalogLoader.hidden = false;
+      catalogLoaderTitle.textContent = title;
+      catalogLoaderDetail.textContent = detail;
+      catalogLoaderDetail.classList.toggle('catalog-error', Boolean(opts.error));
+      catalogPick.hidden = !opts.pick;
+    }
+
+    function hideLoader() {
+      catalogLoader.hidden = true;
+      catalogPick.hidden = true;
+    }
+
+    function normalizePath(value) {
+      return String(value || '').replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
+    }
+
+    function basename(value) {
+      return normalizePath(value).split('/').filter(Boolean).pop() || '';
+    }
+
+    function extensionOf(value) {
+      const name = basename(value).toLowerCase();
+      const idx = name.lastIndexOf('.');
+      return idx >= 0 ? name.slice(idx) : '';
+    }
+
+    function isExternalUrl(ref) {
+      return /^(?:https?:|data:|#|mailto:)/i.test(String(ref || '').trim());
+    }
+
+    function encodeUrlPath(path) {
+      return normalizePath(path).split('/').filter(Boolean).map(encodeURIComponent).join('/');
+    }
+
+    function escapeAttr(value) {
+      return escapeHtml(value).replace(/'/g, '&#39;');
+    }
+
+    function stripQuotes(value) {
+      const s = String(value || '').trim();
+      if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
+        return s.slice(1, -1);
+      }
+      return s;
+    }
+
+    function normalizeSlideText(text) {
+      return String(text || '').replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
+    }
+
+    function parseFrontmatter(text) {
+      const normalized = normalizeSlideText(text);
+      if (!normalized.startsWith('---')) return [{}, normalized];
+      const match = normalized.match(/^---\s*\n([\s\S]*?)\n---\s*\n?/);
+      if (!match) return [{}, normalized];
+      const meta = {};
+      match[1].split('\n').forEach((line) => {
+        const m = line.match(/^([A-Za-z0-9_-]+)\s*:\s*(.*)$/);
+        if (!m) return;
+        meta[m[1]] = stripQuotes(m[2]);
+      });
+      return [meta, normalized.slice(match[0].length)];
+    }
+
+    function splitDocument(body) {
+      const preamble = [];
+      const sections = [];
+      let currentTitle = null;
+      let buffer = [];
+
+      body.replace(/\r\n?/g, '\n').split('\n').forEach((line) => {
+        const heading = line.trim().match(/^##\s+(.+?)\s*$/);
+        if (heading) {
+          if (currentTitle !== null) {
+            sections.push([currentTitle, buffer.join('\n').trim()]);
+          } else {
+            preamble.push(...buffer);
+          }
+          currentTitle = heading[1].trim();
+          buffer = [];
+          return;
+        }
+        buffer.push(line);
+      });
+
+      if (currentTitle !== null) sections.push([currentTitle, buffer.join('\n').trim()]);
+      let intro = preamble.join('\n').trim().replace(/^---+\s*$/gm, '').trim();
+      return [intro, sections];
+    }
+
+    function parseBlock(folder, raw) {
+      const [meta, body] = parseFrontmatter(raw);
+      const [preamble, sections] = splitDocument(body);
+      return {
+        folder,
+        order_key: folder,
+        block_type: meta.type || 'talk',
+        meta,
+        preamble,
+        sections,
+        used: new Set(),
+        assetCache: new Map(),
+      };
+    }
+
+    class FileCatalog {
+      constructor(files) {
+        this.fileMap = new Map();
+        this.urlCache = new Map();
+        this.canLinkUnknown = false;
+        const raw = Array.from(files || []).map((file) => ({ file, parts: normalizePath(file.webkitRelativePath || file.name).split('/').filter(Boolean) }));
+        const hasInSegment = raw.some((entry) => entry.parts.some((part) => part.toLowerCase() === 'in'));
+
+        raw.forEach(({ file, parts }) => {
+          if (!parts.length) return;
+          if (hasInSegment) {
+            const inIdx = parts.findIndex((part) => part.toLowerCase() === 'in');
+            if (inIdx < 0) return;
+            parts = parts.slice(inIdx + 1);
+          }
+          if (parts.length < 2) return;
+          const relPath = parts.slice(1).join('/');
+          const key = `${parts[0]}/${relPath}`.toLowerCase();
+          this.fileMap.set(key, { file, folder: parts[0], name: parts.at(-1), relPath });
+        });
+      }
+
+      async listBlockFolders() {
+        return Array.from(new Set(Array.from(this.fileMap.values())
+          .filter((entry) => entry.relPath.toLowerCase() === 'slide.md')
+          .map((entry) => entry.folder))).sort();
+      }
+
+      async readText(folder, relPath = 'slide.md') {
+        const entry = this.fileMap.get(`${folder}/${normalizePath(relPath)}`.toLowerCase());
+        if (!entry) throw new Error(`Cannot read ${folder}/${relPath}`);
+        const buf = await entry.file.arrayBuffer();
+        return new TextDecoder('utf-8').decode(buf).replace(/^\uFEFF/, '');
+      }
+
+      async listFiles(folder) {
+        const prefix = `${folder}/`.toLowerCase();
+        return Array.from(this.fileMap.entries())
+          .filter(([key]) => key.startsWith(prefix))
+          .map(([, entry]) => ({ name: entry.name, relPath: entry.relPath }));
+      }
+
+      async urlFor(folder, relPath) {
+        const key = `${folder}/${normalizePath(relPath)}`.toLowerCase();
+        const entry = this.fileMap.get(key);
+        if (!entry) return '';
+        if (!this.urlCache.has(key)) {
+          let source = entry.file;
+          if (!source.type && extensionOf(entry.name) === '.svg') {
+            source = new Blob([await source.arrayBuffer()], { type: 'image/svg+xml' });
+          }
+          this.urlCache.set(key, URL.createObjectURL(source));
+        }
+        return this.urlCache.get(key);
+      }
+    }
+
+    async function pickFileCatalog(files) {
+      const catalog = new FileCatalog(files);
+      const folders = await catalog.listBlockFolders();
+      if (!folders.length) throw new Error('В выбранном каталоге не найдены папки с slide.md.');
+      return catalog;
+    }
+
+    function normalizeMediaBullets(text) {
+      return text.split('\n').map((line) => {
+        const match = line.trim().match(/^-\s+`([^`]+)`\s*$/);
+        if (match && IMAGE_EXTS.has(extensionOf(match[1]))) {
+          const name = match[1];
+          return `![${name}](${name})`;
+        }
+        return line;
+      }).join('\n');
+    }
+
+    function isMediaFilename(value) {
+      return MEDIA_EXTS.has(extensionOf(value));
+    }
+
+    function extractDemoMedia(content) {
+      const intro = [];
+      const refs = [];
+      content.split('\n').forEach((line) => {
+        const stripped = line.trim();
+        const img = stripped.match(/!\[[^\]]*\]\(([^)]+)\)/);
+        if (img && isMediaFilename(img[1].trim().split(/\s+/)[0])) {
+          refs.push(img[1].trim().split(/\s+/)[0]);
+          return;
+        }
+        const video = stripped.match(/<video[^>]+src=["']([^"']+)["']/i);
+        if (video) {
+          refs.push(video[1].trim());
+          return;
+        }
+        const bullet = stripped.match(/^-\s+`?([^`\s]+)`?\s*$/);
+        if (bullet && isMediaFilename(bullet[1])) {
+          refs.push(bullet[1].trim());
+          return;
+        }
+        intro.push(line);
+      });
+      return [intro.join('\n').trim(), refs];
+    }
+
+    async function resolveMediaRef(catalog, block, ref) {
+      const clean = normalizePath(String(ref || '').trim().split(/\s+/)[0]);
+      if (!clean || isExternalUrl(clean)) return null;
+
+      const candidates = [clean, basename(clean)];
+      ['assets/', 'videos/', 'demo/'].forEach((prefix) => {
+        if (clean.startsWith(prefix)) {
+          const tail = clean.slice(prefix.length);
+          candidates.push(tail, basename(tail));
+        }
+      });
+
+      const files = await catalog.listFiles(block.folder);
+      const byRel = new Map(files.map((f) => [normalizePath(f.relPath).toLowerCase(), f]));
+      const byName = new Map(files.map((f) => [f.name.toLowerCase(), f]));
+
+      for (const candidate of candidates) {
+        const relKey = normalizePath(candidate).toLowerCase();
+        const match = byRel.get(relKey) || byName.get(basename(candidate).toLowerCase());
+        if (match) return { name: match.name, relPath: match.relPath, url: await catalog.urlFor(block.folder, match.relPath) };
+        if (candidate.includes('/') && catalog.canLinkUnknown) {
+          return { name: basename(candidate), relPath: candidate, url: await catalog.urlFor(block.folder, candidate) };
+        }
+      }
+
+      const requested = basename(clean);
+      const stem = requested.replace(/\.[^.]+$/, '');
+      const suffix = extensionOf(requested);
+      if (suffix && stem.includes('-')) {
+        const [prefix, ...rest] = stem.split('-');
+        const tail = rest.join('-');
+        if (/^\d+$/.test(prefix)) {
+          const fallback = files.find((file) => {
+            if (extensionOf(file.name) !== suffix) return false;
+            const fileStem = file.name.replace(/\.[^.]+$/, '');
+            const parts = fileStem.split('-');
+            return parts.length >= 2 && parts.slice(1).join('-') === tail;
+          });
+          if (fallback) return { name: fallback.name, relPath: fallback.relPath, url: await catalog.urlFor(block.folder, fallback.relPath) };
+        }
+      }
+
+      return null;
+    }
+
+    async function loadInlineSvg(catalog, block, relPath) {
+      const raw = await catalog.readText(block.folder, relPath);
+      return raw.replace(/^\uFEFF/, '').replace(/^<\?xml[^?]*\?\>\s*/i, '').trim();
+    }
+
+    async function inlineSvgMarkup(catalog, block, ref, blockLabel) {
+      const resolved = await resolveMediaRef(catalog, block, ref);
+      if (!resolved) {
+        console.warn(`${blockLabel}: пропущена ссылка — файл не найден: ${ref}`);
+        return '';
+      }
+      block.used.add(resolved.name.toLowerCase());
+      block.used.add(normalizePath(resolved.relPath).toLowerCase());
+      return (await loadInlineSvg(catalog, block, resolved.relPath)).replace(/\s+/g, ' ');
+    }
+
+    async function ensureAsset(catalog, block, ref, blockLabel) {
+      if (isExternalUrl(ref)) return ref;
+      const cacheKey = String(ref || '').trim().toLowerCase();
+      if (block.assetCache.has(cacheKey)) return block.assetCache.get(cacheKey);
+      const resolved = await resolveMediaRef(catalog, block, ref);
+      if (!resolved) {
+        console.warn(`${blockLabel}: пропущена ссылка — файл не найден: ${ref}`);
+        return null;
+      }
+      block.used.add(resolved.name.toLowerCase());
+      block.used.add(normalizePath(resolved.relPath).toLowerCase());
+      block.assetCache.set(cacheKey, resolved.url);
+      block.assetCache.set(resolved.name.toLowerCase(), resolved.url);
+      return resolved.url;
+    }
+
+    async function replaceAsync(text, regex, replacer) {
+      const chunks = [];
+      let lastIndex = 0;
+      for (const match of text.matchAll(regex)) {
+        chunks.push(text.slice(lastIndex, match.index));
+        chunks.push(await replacer(match));
+        lastIndex = match.index + match[0].length;
+      }
+      chunks.push(text.slice(lastIndex));
+      return chunks.join('');
+    }
+
+    async function rewriteMarkdownAssets(text, catalog, block, blockLabel) {
+      let out = await replaceAsync(text, /!\[([^\]]*)\]\(([^)]+)\)/g, async (match) => {
+        const ref = match[2].trim().split(/\s+/)[0];
+        if (extensionOf(ref) === '.svg') {
+          return inlineSvgMarkup(catalog, block, ref, blockLabel);
+        }
+        const url = await ensureAsset(catalog, block, ref, blockLabel);
+        if (!url) return '';
+        return `![${match[1]}](${url})`;
+      });
+
+      out = await replaceAsync(out, /<img([^>]*)\ssrc=["']([^"']+)["']([^>]*)>/gi, async (match) => {
+        const url = await ensureAsset(catalog, block, match[2], blockLabel);
+        if (!url) return '';
+        return `<img${match[1] || ''} src="${escapeAttr(url)}"${match[3] || ''}>`;
+      });
+
+      out = await replaceAsync(out, /<video([^>]*)\ssrc=["']([^"']+)["']([^>]*)>(?:\s*<\/video>)?/gi, async (match) => {
+        const url = await ensureAsset(catalog, block, match[2], blockLabel);
+        if (!url) return '';
+        let attrs = `${match[1] || ''}${match[3] || ''}`;
+        attrs = attrs.replace(/\s+(width|height)=["'][^"']*["']/gi, '');
+        const posterMatch = attrs.match(/\s+poster=["']([^"']+)["']/i);
+        if (posterMatch) {
+          const posterUrl = await ensureAsset(catalog, block, posterMatch[1], blockLabel);
+          attrs = posterUrl
+            ? attrs.replace(/poster=["'][^"']+["']/i, `poster="${escapeAttr(posterUrl)}"`)
+            : attrs.replace(/\s+poster=["'][^"']+["']/i, '');
+        }
+        return `<video${attrs} src="${escapeAttr(url)}"></video>`;
+      });
+      return out;
+    }
+
+    function inlineMarkdown(text) {
+      const code = [];
+      let value = String(text).replace(/`([^`]+)`/g, (_, body) => {
+        code.push(`<code>${escapeHtml(body)}</code>`);
+        return `\u0000CODE${code.length - 1}\u0000`;
+      });
+
+      value = escapeHtml(value);
+      value = value.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, src) => `<img src="${escapeAttr(src)}" alt="${escapeAttr(alt)}">`);
+      value = value.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, href) => `<a href="${escapeAttr(href)}" target="_blank" rel="noopener">${label}</a>`);
+      value = value.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      value = value.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+      value = value.replace(/\u0000CODE(\d+)\u0000/g, (_, idx) => code[Number(idx)] || '');
+      return value;
+    }
+
+    function isTableSeparator(line) {
+      return /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(line);
+    }
+
+    function splitTableRow(line) {
+      return line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((cell) => cell.trim());
+    }
+
+    function isListLine(line) {
+      return /^\s*(-|\*)\s+/.test(line);
+    }
+
+    function isOrderedListLine(line) {
+      return /^\s*\d+\.\s+/.test(line);
+    }
+
+    function isSpecialBlockStart(lines, idx) {
+      const trimmed = lines[idx].trim();
+      if (!trimmed) return true;
+      if (/^<(video|img|div|table|p|ul|ol|h\d|svg)\b/i.test(trimmed)) return true;
+      if (/^!\[[^\]]*\]\([^)]+\)\s*$/.test(trimmed)) return true;
+      if (isListLine(trimmed) || isOrderedListLine(trimmed)) return true;
+      if (idx + 1 < lines.length && trimmed.includes('|') && isTableSeparator(lines[idx + 1])) return true;
+      return false;
+    }
+
+    function mdToHtml(text) {
+      const lines = String(text || '').replace(/\r\n?/g, '\n').split('\n');
+      const out = [];
+      let i = 0;
+
+      while (i < lines.length) {
+        const line = lines[i];
+        const trimmed = line.trim();
+        if (!trimmed) { i += 1; continue; }
+
+        if (/^<(video|img|div|table|p|ul|ol|h\d|svg)\b/i.test(trimmed)) {
+          out.push(trimmed);
+          i += 1;
+          continue;
+        }
+
+        if (i + 1 < lines.length && trimmed.includes('|') && isTableSeparator(lines[i + 1])) {
+          const headers = splitTableRow(trimmed);
+          i += 2;
+          const rows = [];
+          while (i < lines.length && lines[i].trim().includes('|')) {
+            rows.push(splitTableRow(lines[i]));
+            i += 1;
+          }
+          out.push(`<table><thead><tr>${headers.map((h) => `<th>${inlineMarkdown(h)}</th>`).join('')}</tr></thead><tbody>${rows.map((row) => `<tr>${row.map((cell) => `<td>${inlineMarkdown(cell)}</td>`).join('')}</tr>`).join('')}</tbody></table>`);
+          continue;
+        }
+
+        if (isListLine(trimmed)) {
+          const items = [];
+          while (i < lines.length && isListLine(lines[i].trim())) {
+            items.push(lines[i].trim().replace(/^(-|\*)\s+/, ''));
+            i += 1;
+          }
+          out.push(`<ul>${items.map((item) => `<li>${inlineMarkdown(item)}</li>`).join('')}</ul>`);
+          continue;
+        }
+
+        if (isOrderedListLine(trimmed)) {
+          const items = [];
+          while (i < lines.length && isOrderedListLine(lines[i].trim())) {
+            items.push(lines[i].trim().replace(/^\d+\.\s+/, ''));
+            i += 1;
+          }
+          out.push(`<ol>${items.map((item) => `<li>${inlineMarkdown(item)}</li>`).join('')}</ol>`);
+          continue;
+        }
+
+        const paragraph = [];
+        while (i < lines.length && lines[i].trim() && !isSpecialBlockStart(lines, i)) {
+          paragraph.push(lines[i].trim());
+          i += 1;
+        }
+        if (!paragraph.length) {
+          out.push(`<p>${inlineMarkdown(trimmed)}</p>`);
+          i += 1;
+        } else {
+          out.push(`<p>${paragraph.map(inlineMarkdown).join('<br>')}</p>`);
+        }
+      }
+
+      return out.join('\n');
+    }
+
+    function groupConsecutiveImages(html) {
+      const root = document.createElement('div');
+      root.innerHTML = html;
+      const nodes = Array.from(root.childNodes);
+      let run = [];
+
+      function isImageParagraph(node) {
+        return node.nodeType === Node.ELEMENT_NODE
+          && node.tagName === 'P'
+          && Array.from(node.childNodes).filter((child) => child.nodeType !== Node.TEXT_NODE || child.textContent.trim()).length === 1
+          && node.querySelector(':scope > img');
+      }
+
+      function flush() {
+        if (!run.length) return;
+        if (run.length === 1) {
+          run = [];
+          return;
+        }
+
+        const chunkSizes = [];
+        if (run.length >= 2 && run.length <= 4) {
+          chunkSizes.push(run.length);
+        } else {
+          for (let i = 0; i < run.length; i += 2) {
+            chunkSizes.push(Math.min(2, run.length - i));
+          }
+        }
+
+        const rows = [];
+        let idx = 0;
+        chunkSizes.forEach((size) => {
+          const row = document.createElement('div');
+          row.className = 'media-row';
+          for (let j = 0; j < size; j += 1) {
+            const cell = document.createElement('div');
+            cell.className = 'media-cell';
+            cell.appendChild(run[idx].querySelector('img'));
+            row.appendChild(cell);
+            idx += 1;
+          }
+          rows.push(row);
+        });
+
+        run[0].replaceWith(...rows);
+        run.slice(1).forEach((node) => node.remove());
+        run = [];
+      }
+
+      nodes.forEach((node) => {
+        if (isImageParagraph(node)) {
+          run.push(node);
+        } else {
+          flush();
+        }
+      });
+      flush();
+      return root.innerHTML;
+    }
+
+    async function sectionToHtml(content, catalog, block, blockLabel) {
+      const normalized = normalizeMediaBullets(content);
+      const rewritten = await rewriteMarkdownAssets(normalized, catalog, block, blockLabel);
+      return groupConsecutiveImages(mdToHtml(rewritten));
+    }
+
+    async function listBackgroundVideos(catalog, block) {
+      for (const [sectionTitle, content] of block.sections) {
+        const key = sectionTitle.trim().toLowerCase();
+        if (key !== 'фон' && key !== 'background') continue;
+        const [, refs] = extractDemoMedia(content);
+        const files = [];
+        for (const ref of refs) {
+          const resolved = await resolveMediaRef(catalog, block, ref);
+          if (resolved) {
+            block.used.add(resolved.name.toLowerCase());
+            files.push(resolved);
+          }
+        }
+        return files;
+      }
+
+      return [];
+    }
+
+    async function resolveDemoFiles(catalog, block, refs) {
+      const files = [];
+      const seen = new Set();
+      for (const ref of refs) {
+        const resolved = await resolveMediaRef(catalog, block, ref);
+        if (!resolved) {
+          console.warn(`Блок ${block.order_key}: в ## Демо не найден файл «${ref}»`);
+          continue;
+        }
+        const key = resolved.name.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        block.used.add(key);
+        block.used.add(normalizePath(resolved.relPath).toLowerCase());
+        files.push(resolved);
+      }
+
+      return files;
+    }
+
+    function stepId(title) {
+      return title.trim().toLowerCase();
+    }
+
+    function normalizeSectionTitle(title) {
+      return title.trim().toLowerCase();
+    }
+
+    function isDemoSection(title) {
+      return normalizeSectionTitle(title) === 'демо';
+    }
+
+    function isQuestionsSection(title) {
+      const key = normalizeSectionTitle(title).replace(/\?+$/, '').trim();
+      return key === 'вопросы' || key === 'questions';
+    }
+
+    async function buildWelcomeOrQuestions(catalog, block, slideType) {
+      const videos = await listBackgroundVideos(catalog, block);
+      return {
+        type: slideType,
+        title: block.meta.title || block.order_key,
+        subtitle: block.meta.subtitle || '',
+        videos: videos.map((video) => video.url),
+        block_id: block.order_key,
+      };
+    }
+
+    async function buildTalkSlides(catalog, block) {
+      const blockLabel = `Блок ${block.order_key}`;
+      const title = block.meta.title || block.order_key;
+      const author = block.meta.author || '';
+      const talkMeta = { block_title: title, author };
+      const slides = [];
+
+      if (block.preamble.trim()) {
+        slides.push({
+          type: 'section',
+          block_id: block.order_key,
+          section: 'intro',
+          section_title: title,
+          step_id: 'intro',
+          html: await sectionToHtml(block.preamble, catalog, block, blockLabel),
+          ...talkMeta,
+        });
+      }
+
+      for (const [sectionTitle, content] of block.sections) {
+        const key = normalizeSectionTitle(sectionTitle);
+
+        if (isDemoSection(sectionTitle)) {
+          const [introText, demoRefs] = extractDemoMedia(content);
+          const demoIntroHtml = await sectionToHtml(introText, catalog, block, blockLabel);
+          const mediaFiles = await resolveDemoFiles(catalog, block, demoRefs);
+          if (!mediaFiles.length) {
+            if (demoIntroHtml.trim()) {
+              slides.push({
+                type: 'section',
+                block_id: block.order_key,
+                section: key,
+                section_title: sectionTitle,
+                step_id: stepId(sectionTitle),
+                html: demoIntroHtml,
+                ...talkMeta,
+              });
+            }
+            continue;
+          }
+
+          for (let idx = 0; idx < mediaFiles.length; idx += 1) {
+            const media = mediaFiles[idx];
+            const ext = extensionOf(media.name);
+            const isVideo = VIDEO_EXTS.has(ext);
+            const isSvg = ext === '.svg';
+            slides.push({
+              type: 'demo',
+              block_id: block.order_key,
+              src: isSvg ? '' : media.url,
+              mime: isVideo ? 'video' : isSvg ? 'svg' : 'image',
+              svg_html: isSvg ? await loadInlineSvg(catalog, block, media.relPath) : '',
+              index: idx + 1,
+              total: mediaFiles.length,
+              step_id: `демо-${idx + 1}`,
+              intro_html: idx === 0 ? demoIntroHtml : '',
+              ...talkMeta,
+            });
+          }
+          continue;
+        }
+
+        if (isQuestionsSection(sectionTitle)) {
+          slides.push({ type: 'qa', block_id: block.order_key, step_id: stepId(sectionTitle), ...talkMeta });
+          continue;
+        }
+
+        // Any non-special second-level heading is an ordinary content slide.
+        slides.push({
+          type: 'section',
+          block_id: block.order_key,
+          section: key,
+          section_title: sectionTitle,
+          step_id: stepId(sectionTitle),
+          html: await sectionToHtml(content, catalog, block, blockLabel),
+          ...talkMeta,
+        });
+      }
+
+      return slides;
+    }
+
+    async function buildSlidesFromCatalog(catalog) {
+      const folders = await catalog.listBlockFolders();
+      const blocks = [];
+      for (const folder of folders) {
+        const raw = await catalog.readText(folder, 'slide.md');
+        blocks.push(parseBlock(folder, raw));
+      }
+
+      const slides = [];
+      for (const block of blocks) {
+        registerBlockTimer(block);
+        if (block.block_type === 'welcome') {
+          slides.push(await buildWelcomeOrQuestions(catalog, block, 'welcome'));
+        } else if (block.block_type === 'questions') {
+          slides.push(await buildWelcomeOrQuestions(catalog, block, 'questions'));
+        } else {
+          slides.push(...await buildTalkSlides(catalog, block));
+        }
+      }
+      return { slides, title: blocks[0]?.meta?.title || 'AI Fun' };
+    }
+
+    async function loadCatalog(catalog) {
+      showLoader('Чтение In Catalog', 'Собираю презентацию напрямую из папок с slide.md и медиа...', { pick: false });
+      Object.keys(BLOCK_TIMERS).forEach((key) => { delete BLOCK_TIMERS[key]; });
+      const result = await buildSlidesFromCatalog(catalog);
+      SLIDES = result.slides;
+      document.title = result.title;
+      deck.innerHTML = '';
+      index = 0;
+      buildBlockNav();
+      renderProgressSegments();
+      buildDeck();
+      hideLoader();
+      updateUI();
+      scheduleFit();
+    }
+
+    async function initPresentation() {
+      setupMediaViewer();
+      showLoader(
+        'Выберите In Catalog',
+        'Локальный HTML не может сам прочитать соседнюю папку. Выберите каталог in/ или корень проекта; после этого презентация соберётся в браузере.',
+        { pick: true, error: false }
+      );
+    }
+
+    catalogPick.addEventListener('click', () => catalogFileInput.click());
+    catalogFileInput.addEventListener('change', async () => {
+      try {
+        await loadCatalog(await pickFileCatalog(catalogFileInput.files));
+      } catch (err) {
+        showLoader('Каталог не прочитан', err.message || String(err), { pick: true, error: true });
+      }
+    });
+
+    function renderTalkHeader(data, sectionTitle) {
+      const author = data.author
+        ? `<p class="project-author">${escapeHtml(data.author)}</p>`
+        : '';
+      const step = sectionTitle
+        ? `<p class="talk-step">${escapeHtml(sectionTitle)}</p>`
+        : '';
+      return `
+        <header class="talk-header">
+          <div class="talk-identity">
+            <div class="talk-titles">
+              <h1 class="project-title">${escapeHtml(data.block_title || '')}</h1>
+              ${step}
+            </div>
+            ${author}
+          </div>
+        </header>
+      `;
+    }
+
+    function renderSlide(data, i) {
+      const el = document.createElement('section');
+      el.className = 'slide';
+      el.dataset.index = String(i);
+
+      if (data.type === 'welcome') {
+        el.classList.add('cinematic');
+        el.innerHTML = `
+          <div class="bg-video-stack" aria-hidden="true">
+            <video class="bg-video bg-video-a" muted playsinline preload="auto"></video>
+            <video class="bg-video bg-video-b" muted playsinline preload="auto"></video>
+          </div>
+          <div class="cinematic-banner">
+            <div class="cinematic-content cinematic">
+              <h1>${escapeHtml(data.title || '')}</h1>
+              ${data.subtitle ? `<p class="subtitle">${escapeHtml(data.subtitle)}</p>` : ''}
+            </div>
+          </div>
+        `;
+        el.dataset.videos = JSON.stringify(data.videos || []);
+        return el;
+      }
+
+      if (data.type === 'questions') {
+        el.classList.add('cinematic', 'cinematic-qa');
+        el.innerHTML = `
+          <div class="bg-video-stack" aria-hidden="true">
+            <video class="bg-video bg-video-a" muted playsinline preload="auto"></video>
+            <video class="bg-video bg-video-b" muted playsinline preload="auto"></video>
+          </div>
+          <div class="cinematic-banner">
+            <div class="cinematic-mark-wrap">
+              <p class="cinematic-mark" aria-label="Вопросы">?</p>
+            </div>
+          </div>
+        `;
+        el.dataset.videos = JSON.stringify(data.videos || []);
+        return el;
+      }
+
+      if (data.type === 'qa') {
+        el.classList.add('qa');
+        el.innerHTML = `
+          <div class="slide-margin-box slide-qa-box">
+            <p class="slide-qa-mark" aria-label="Вопросы">?</p>
+          </div>
+        `;
+        return el;
+      }
+
+      if (data.type === 'demo') {
+        el.classList.add('demo');
+        const media = data.mime === 'video'
+          ? `<video src="${data.src}" controls playsinline preload="metadata"></video>`
+          : data.mime === 'svg'
+            ? (data.svg_html || '<p>Нет SVG</p>')
+            : data.mime === 'image'
+              ? `<img src="${data.src}" alt="Демо ${data.index}">`
+              : `<p>Нет медиа</p>`;
+        const demoTitle = data.total > 1
+          ? `Демо ${data.index} / ${data.total}`
+          : 'Демо';
+        el.innerHTML = `
+          <div class="slide-margin-box">
+            <div class="slide-fit-host">
+              <div class="slide-fit-content">
+                ${renderTalkHeader(data, demoTitle)}
+                <div class="slide-body-fit">
+                  <div class="slide-body demo-body">
+                    <div class="demo-intro">${data.intro_html || ''}</div>
+                    <div class="demo-media">${media}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        return el;
+      }
+
+      el.classList.add('content');
+      el.innerHTML = `
+        <div class="slide-margin-box">
+          <div class="slide-fit-host">
+            <div class="slide-fit-content">
+              ${renderTalkHeader(data, data.section_title || '')}
+              <div class="slide-body-fit">
+                <div class="slide-body">${data.html || ''}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      return el;
+    }
+
+    function parseTimerMinSec(meta) {
+      const raw = String(meta?.timer_min ?? '').trim().replace(',', '.');
+      const n = parseFloat(raw);
+      return Number.isFinite(n) && n > 0 ? n * 60 * 1000 : 0;
+    }
+
+    function registerBlockTimer(block) {
+      BLOCK_TIMERS[block.order_key] = parseTimerMinSec(block.meta);
+    }
+
+    function getBlockTimerMs(blockId) {
+      return BLOCK_TIMERS[blockId] || 0;
+    }
+
+    function getTotalPresentationMs() {
+      return Object.values(BLOCK_TIMERS).reduce((sum, ms) => sum + (ms || 0), 0);
+    }
+
+    function formatTimerMs(ms) {
+      const totalSec = Math.max(0, Math.ceil(ms / 1000));
+      const m = Math.floor(totalSec / 60);
+      const s = totalSec % 60;
+      return `${m}:${String(s).padStart(2, '0')}`;
+    }
+
+    function formatTimerCountdown() {
+      const totalPresentationMs = getTotalPresentationMs();
+      const totalLabel = totalPresentationMs ? formatTimerMs(totalPresentationMs) : '';
+      if (!timerBlockId || !getBlockTimerMs(timerBlockId)) {
+        return totalLabel ? `— / ${totalLabel}` : '';
+      }
+      const blockLabel = formatTimerMs(timerRemainingMs);
+      return totalLabel ? `${blockLabel} / ${totalLabel}` : blockLabel;
+    }
+
+    function updateTimerBar() {
+      const total = getBlockTimerMs(timerBlockId);
+      const totalPresentationMs = getTotalPresentationMs();
+      if (!total && !totalPresentationMs) {
+        timerLine.hidden = true;
+        timerFill.style.width = '0%';
+        timerCount.textContent = '';
+        return;
+      }
+      timerLine.hidden = false;
+      if (total) {
+        const pct = Math.max(0, Math.min(100, (timerRemainingMs / total) * 100));
+        timerFill.style.width = pct + '%';
+      } else {
+        timerFill.style.width = '0%';
+      }
+      timerCount.textContent = formatTimerCountdown();
+    }
+
+    function stopBlockTimer() {
+      if (timerRafId) cancelAnimationFrame(timerRafId);
+      timerRafId = 0;
+    }
+
+    function tickBlockTimer(now) {
+      if (!timerBlockId || !getBlockTimerMs(timerBlockId)) return;
+      const dt = Math.max(0, now - timerLastTick);
+      timerLastTick = now;
+      timerRemainingMs = Math.max(0, timerRemainingMs - dt);
+      updateTimerBar();
+      if (timerRemainingMs > 0) {
+        timerRafId = requestAnimationFrame(tickBlockTimer);
+      }
+    }
+
+    function syncBlockTimer(slide) {
+      const blockId = slide?.block_id || null;
+      if (blockId !== timerBlockId) {
+        timerBlockId = blockId;
+        timerRemainingMs = getBlockTimerMs(blockId);
+      }
+      stopBlockTimer();
+      timerLastTick = performance.now();
+      updateTimerBar();
+      if (timerRemainingMs > 0) {
+        timerRafId = requestAnimationFrame(tickBlockTimer);
+      }
+    }
+
+    function openSlideMediaFullscreen(media) {
+      if (!media) return;
+      const src = mediaViewerSource(media);
+      if (!src) return;
+      if (media.tagName === 'VIDEO') {
+        openMediaViewer(src, 'video', {
+          currentTime: media.currentTime,
+          autoplay: !media.paused,
+        });
+        return;
+      }
+      openMediaViewer(src, 'img');
+    }
+
+    function wrapSlideMedia(slideEl) {
+      slideEl.querySelectorAll('.slide-body img, .slide-body svg, .slide-body video, .demo-media img, .demo-media svg, .demo-media video').forEach((media) => {
+        if (media.closest('.slide-media-wrap') || media.classList.contains('bg-video')) return;
+
+        const wrap = document.createElement('div');
+        wrap.className = 'slide-media-wrap';
+        media.replaceWith(wrap);
+        wrap.appendChild(media);
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'slide-media-expand';
+        btn.setAttribute('aria-label', 'Открыть на весь экран');
+        btn.title = 'На весь экран';
+        btn.textContent = '⛶';
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          openSlideMediaFullscreen(media);
+        });
+        wrap.appendChild(btn);
+      });
+    }
+
+    function buildDeck() {
+      deck.innerHTML = '';
+      SLIDES.forEach((s, i) => {
+        const slideEl = renderSlide(s, i);
+        wrapSlideMedia(slideEl);
+        deck.appendChild(slideEl);
+      });
+      bindMediaFitEvents();
+    }
+
+    /** Подгонка контента слайда в область с 5% полями без прокрутки. */
+    function mediaNaturalSize(media) {
+      if (!media) return { w: 0, h: 0 };
+      if (media.tagName === 'VIDEO') {
+        return { w: media.videoWidth || 0, h: media.videoHeight || 0 };
+      }
+      if (media.tagName === 'svg') {
+        const vb = media.viewBox?.baseVal;
+        if (vb && vb.width > 0 && vb.height > 0) {
+          return { w: vb.width, h: vb.height };
+        }
+        try {
+          const box = media.getBBox();
+          if (box.width > 0 && box.height > 0) {
+            return { w: box.width, h: box.height };
+          }
+        } catch (_) {}
+      }
+      return { w: media.naturalWidth || media.width || 0, h: media.naturalHeight || media.height || 0 };
+    }
+
+    function fitContainedMedia(media, maxW, maxH, opts = {}) {
+      if (!media || maxW <= 0 || maxH <= 0) return;
+      const allowUpscale = opts.allowUpscale !== false;
+      media.style.maxWidth = '';
+      media.style.maxHeight = '';
+      media.style.width = '';
+      media.style.height = '';
+
+      const { w, h } = mediaNaturalSize(media);
+      if (!w || !h) {
+        media.style.maxWidth = `${Math.floor(maxW)}px`;
+        media.style.maxHeight = `${Math.floor(maxH)}px`;
+        return;
+      }
+
+      const scale = Math.min(maxW / w, maxH / h, allowUpscale ? Infinity : 1);
+      media.style.width = `${Math.max(1, Math.floor(w * scale))}px`;
+      media.style.height = `${Math.max(1, Math.floor(h * scale))}px`;
+    }
+
+    function fitDemoMedia(slideEl) {
+      const host = slideEl.querySelector('.slide-fit-host');
+      const media = slideEl.querySelector('.demo-media .slide-media-wrap video, .demo-media .slide-media-wrap img, .demo-media .slide-media-wrap svg, .demo-media > video, .demo-media > img, .demo-media > svg');
+      if (!host || !media) return;
+
+      const padX = 24;
+      const padY = 12;
+      const header = slideEl.querySelector('.talk-header');
+      const intro = slideEl.querySelector('.demo-intro');
+      const usedH = (header?.offsetHeight || 0) + (intro?.offsetHeight || 0) + padY;
+      const maxW = Math.max(0, host.clientWidth - padX);
+      const maxH = Math.max(0, host.clientHeight - usedH);
+
+      fitContainedMedia(media, maxW, maxH, { allowUpscale: media.tagName !== 'VIDEO' });
+    }
+
+    function fitSlideBodyMedia(slideEl) {
+      const host = slideEl.querySelector('.slide-fit-host');
+      const content = slideEl.querySelector('.slide-fit-content');
+      if (!host || !content || slideEl.classList.contains('demo')) return;
+
+      const bodyFit = content.querySelector('.slide-body-fit');
+      const body = bodyFit?.querySelector('.slide-body') || content.querySelector('.slide-body');
+      if (!body) return;
+
+      const padX = 24;
+      const padY = 16;
+      const bodyTop = bodyFit?.offsetTop ?? body.offsetTop ?? 0;
+      const areaH = bodyFit?.clientHeight || Math.max(0, host.clientHeight - bodyTop);
+
+      body.querySelectorAll('.media-row').forEach((row) => {
+        fitMediaRowGroup(row, host, bodyTop, padX, padY, areaH);
+      });
+
+      body.querySelectorAll('.slide-media-wrap').forEach((wrap) => {
+        if (wrap.closest('.media-row')) return;
+        const media = wrap.querySelector('video, img, svg');
+        if (!media) return;
+        const wrapTop = (wrap.offsetTop || 0) - (body.offsetTop || 0);
+        const maxW = Math.max(0, host.clientWidth - padX);
+        const maxH = Math.max(0, areaH - wrapTop - padY);
+        fitContainedMedia(media, maxW, maxH, { allowUpscale: true });
+      });
+    }
+
+    function fitMediaRowGroup(row, host, bodyTop, padX, padY, areaH) {
+      const cells = Array.from(row.querySelectorAll('.media-cell'));
+      const medias = cells.map((cell) => cell.querySelector('.slide-media-wrap img, .slide-media-wrap svg, .slide-media-wrap video, img, svg, video')).filter(Boolean);
+      if (!medias.length) return;
+
+      const rowTop = (row.offsetTop || 0);
+      const body = row.closest('.slide-body');
+      const rowTopInBody = body ? rowTop - (body.offsetTop || 0) : rowTop;
+      const maxH = Math.max(0, (areaH ?? (host.clientHeight - bodyTop)) - rowTopInBody - padY);
+      const maxW = Math.max(0, host.clientWidth - padX);
+      const gap = parseFloat(getComputedStyle(row).columnGap || getComputedStyle(row).gap || '16') || 16;
+      const cellW = Math.max(0, (maxW - gap * Math.max(0, medias.length - 1)) / medias.length);
+
+      let uniformScale = Infinity;
+      medias.forEach((media) => {
+        const { w, h } = mediaNaturalSize(media);
+        if (!w || !h) return;
+        uniformScale = Math.min(uniformScale, cellW / w, maxH / h);
+      });
+      if (!Number.isFinite(uniformScale) || uniformScale <= 0) {
+        medias.forEach((media) => fitContainedMedia(media, cellW, maxH, { allowUpscale: true }));
+        return;
+      }
+
+      medias.forEach((media) => {
+        const { w, h } = mediaNaturalSize(media);
+        if (!w || !h) {
+          fitContainedMedia(media, cellW, maxH, { allowUpscale: true });
+          return;
+        }
+        media.style.width = `${Math.max(1, Math.floor(w * uniformScale))}px`;
+        media.style.height = `${Math.max(1, Math.floor(h * uniformScale))}px`;
+      });
+    }
+
+    function fitSlideContent(slideEl) {
+      if (slideEl.classList.contains('demo')) {
+        const content = slideEl.querySelector('.slide-fit-content');
+        const body = content?.querySelector('.slide-body');
+        if (content) content.style.transform = 'none';
+        if (body) body.style.transform = 'none';
+        fitDemoMedia(slideEl);
+        return;
+      }
+
+      const host = slideEl.querySelector('.slide-fit-host');
+      const content = slideEl.querySelector('.slide-fit-content');
+      if (host && content) {
+        const bodyFit = content.querySelector('.slide-body-fit');
+        const body = bodyFit?.querySelector('.slide-body') || content.querySelector('.slide-body');
+        const header = content.querySelector('.talk-header');
+
+        content.style.transform = 'none';
+        if (body) body.style.transform = 'none';
+        if (body) {
+          body.querySelectorAll('.slide-media-wrap video, .slide-media-wrap img, .slide-media-wrap svg').forEach((media) => {
+            media.style.width = '';
+            media.style.height = '';
+            media.style.maxWidth = '';
+            media.style.maxHeight = '';
+          });
+        }
+
+        const boxW = host.clientWidth;
+        const boxH = host.clientHeight;
+        if (boxW <= 0 || boxH <= 0 || !body) return;
+
+        fitSlideBodyMedia(slideEl);
+
+        const hasLargeMedia = Boolean(body.querySelector('.media-row, .slide-media-wrap'));
+        if (bodyFit) bodyFit.classList.toggle('is-compact', !hasLargeMedia);
+
+        const headerH = header?.offsetHeight || 0;
+        const fitH = Math.max(0, boxH - headerH);
+        const naturalH = body.scrollHeight;
+        const naturalW = body.scrollWidth;
+        const scale = Math.min(1, fitH / naturalH, boxW / naturalW);
+
+        if (scale < 0.999) {
+          body.style.transform = `scale(${scale})`;
+          body.style.transformOrigin = hasLargeMedia ? 'top center' : 'center center';
+        }
+        return;
+      }
+
+      const banner = slideEl.querySelector('.cinematic-banner');
+      const cinematic = slideEl.querySelector('.cinematic-content');
+      if (!banner || !cinematic) return;
+
+      cinematic.style.transform = 'none';
+      const title = cinematic.querySelector('h1');
+      const subtitle = cinematic.querySelector('.subtitle');
+      if (title) title.style.fontSize = '';
+      if (subtitle) subtitle.style.fontSize = '';
+
+      const maxH = banner.clientHeight;
+      if (maxH <= 0) return;
+
+      let scale = 1;
+      const minScale = 0.55;
+      cinematic.style.transform = 'scale(1)';
+
+      while (cinematic.scrollHeight > maxH && scale > minScale) {
+        scale *= 0.92;
+        cinematic.style.transform = `scale(${scale})`;
+        cinematic.style.transformOrigin = 'top center';
+      }
+    }
+
+    function fitAllSlides() {
+      deck.querySelectorAll('.slide').forEach((slide) => fitSlideContent(slide));
+    }
+
+    let fitScheduled = false;
+    function scheduleFit() {
+      if (fitScheduled) return;
+      fitScheduled = true;
+      requestAnimationFrame(() => {
+        fitScheduled = false;
+        fitAllSlides();
+      });
+    }
+
+    function stopBgVideo() {
+      deck.querySelectorAll('.slide.cinematic').forEach((slide) => {
+        if (typeof slide._bgStop === 'function') slide._bgStop();
+      });
+    }
+
+    function startBgRotation(slideEl) {
+      stopBgVideo();
+      const raw = slideEl.dataset.videos;
+      if (!raw) return;
+      const urls = JSON.parse(raw);
+      if (!urls.length) return;
+
+      const stack = slideEl.querySelector('.bg-video-stack');
+      const layers = stack ? Array.from(stack.querySelectorAll('.bg-video')) : [];
+      if (layers.length < 2) return;
+
+      let front = 0;
+      let back = 1;
+      let currentIdx = Math.floor(Math.random() * urls.length);
+      let transitioning = false;
+      let stopped = false;
+
+      function resetLayerClasses(v) {
+        v.classList.remove('is-base', 'is-overlay', 'reveal', 'visible');
+      }
+
+      layers.forEach((v) => {
+        v.muted = true;
+        v.playsInline = true;
+        v.loop = false;
+        v.preload = 'auto';
+        resetLayerClasses(v);
+      });
+
+      function pickNextIdx() {
+        if (urls.length === 1) return 0;
+        let next;
+        do {
+          next = Math.floor(Math.random() * urls.length);
+        } while (next === currentIdx);
+        return next;
+      }
+
+      function waitReady(video) {
+        return new Promise((resolve) => {
+          if (video.readyState >= 4) {
+            resolve();
+            return;
+          }
+          const done = () => {
+            video.removeEventListener('canplaythrough', done);
+            video.removeEventListener('canplay', done);
+            video.removeEventListener('error', done);
+            resolve();
+          };
+          video.addEventListener('canplaythrough', done);
+          video.addEventListener('canplay', done);
+          video.addEventListener('error', done);
+        });
+      }
+
+      function loadInto(video, idx) {
+        const url = urls[idx];
+        if (video.dataset.src !== url) {
+          video.dataset.src = url;
+          video.src = url;
+          video.load();
+        } else {
+          video.currentTime = 0;
+        }
+        return waitReady(video).then(() => video.play().catch(() => {}));
+      }
+
+      function revealOverlay(overlayEl) {
+        overlayEl.classList.add('is-overlay');
+        overlayEl.classList.remove('reveal');
+        void overlayEl.offsetWidth;
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => overlayEl.classList.add('reveal'));
+        });
+      }
+
+      function bindAdvanceHandlers(active) {
+        active.onended = () => crossfadeToNext();
+        active.ontimeupdate = () => {
+          const dur = active.duration;
+          if (!dur || dur < 2) return;
+          if (active.currentTime >= dur - 1.2) {
+            active.ontimeupdate = null;
+            crossfadeToNext();
+          }
+        };
+      }
+
+      async function crossfadeToNext() {
+        if (stopped || transitioning) return;
+        transitioning = true;
+
+        const frontEl = layers[front];
+        const backEl = layers[back];
+        const nextIdx = pickNextIdx();
+
+        frontEl.onended = null;
+        frontEl.ontimeupdate = null;
+
+        resetLayerClasses(backEl);
+        await loadInto(backEl, nextIdx);
+        if (stopped) {
+          transitioning = false;
+          return;
+        }
+
+        /* нижний слой остаётся на 100% — верхний плавно накрывает */
+        revealOverlay(backEl);
+
+        window.setTimeout(() => {
+          if (stopped) return;
+          resetLayerClasses(frontEl);
+          frontEl.pause();
+          frontEl.removeAttribute('src');
+          delete frontEl.dataset.src;
+          frontEl.load();
+
+          resetLayerClasses(backEl);
+          backEl.classList.add('is-base');
+
+          currentIdx = nextIdx;
+          [front, back] = [back, front];
+          bindAdvanceHandlers(layers[front]);
+          transitioning = false;
+        }, BG_CROSSFADE_MS + 50);
+      }
+
+      slideEl._bgStop = () => {
+        stopped = true;
+        layers.forEach((v) => {
+          v.onended = null;
+          v.ontimeupdate = null;
+          v.pause();
+          v.removeAttribute('src');
+          delete v.dataset.src;
+          resetLayerClasses(v);
+          v.load();
+        });
+        delete slideEl._bgStop;
+      };
+
+      (async () => {
+        const first = layers[0];
+        await loadInto(first, currentIdx);
+        if (stopped) return;
+        first.classList.add('is-base');
+        bindAdvanceHandlers(first);
+      })();
+    }
+
+    function pauseInactiveMedia() {
+      deck.querySelectorAll('video').forEach(v => {
+        if (!v.classList.contains('bg-video')) v.pause();
+      });
+    }
+
+    function pauseDemoVideos(slideEl) {
+      slideEl.querySelectorAll('.demo-media video').forEach((v) => {
+        v.pause();
+      });
+    }
+
+    function buildBlockNav() {
+      BLOCK_NAV = [];
+      SLIDES.forEach((slide, i) => {
+        const id = slide.block_id || `slide-${i}`;
+        let block = BLOCK_NAV.find((entry) => entry.id === id);
+        if (!block) {
+          block = {
+            id,
+            start: i,
+            end: i,
+            count: 0,
+            title: slide.block_title || slide.title || id,
+          };
+          BLOCK_NAV.push(block);
+        }
+        block.end = i;
+        block.count += 1;
+      });
+    }
+
+    function renderProgressSegments() {
+      progressSegments.innerHTML = '';
+      BLOCK_NAV.forEach((block) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'progress-segment';
+        btn.style.flex = `${block.count} 1 0`;
+        btn.title = block.title;
+        btn.setAttribute('aria-label', `Перейти к блоку: ${block.title}`);
+        btn.dataset.start = String(block.start);
+
+        const fill = document.createElement('span');
+        fill.className = 'progress-segment-fill';
+        fill.setAttribute('aria-hidden', 'true');
+        btn.appendChild(fill);
+
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          goToSlide(block.start);
+        });
+        progressSegments.appendChild(btn);
+      });
+    }
+
+    function updateProgressSegments() {
+      BLOCK_NAV.forEach((block, bi) => {
+        const btn = progressSegments.children[bi];
+        if (!btn) return;
+        const fill = btn.querySelector('.progress-segment-fill');
+        btn.classList.remove('is-done', 'is-current', 'is-upcoming');
+
+        if (index > block.end) {
+          btn.classList.add('is-done');
+          fill.style.width = '100%';
+        } else if (index >= block.start && index <= block.end) {
+          btn.classList.add('is-current');
+          const inBlock = index - block.start + 1;
+          fill.style.width = `${(inBlock / block.count) * 100}%`;
+        } else {
+          btn.classList.add('is-upcoming');
+          fill.style.width = '0%';
+        }
+      });
+    }
+
+    function goToSlide(targetIndex) {
+      if (targetIndex < 0 || targetIndex >= SLIDES.length) return;
+      pauseInactiveMedia();
+      index = targetIndex;
+      updateUI();
+    }
+
+    function updateUI() {
+      const nodes = deck.querySelectorAll('.slide');
+      if (!SLIDES.length) {
+        progressSegments.innerHTML = '';
+        stopBlockTimer();
+        timerLine.hidden = true;
+        timerCount.textContent = '';
+        progressLabel.textContent = 'In Catalog пуст';
+        progressCount.textContent = '0/0';
+        return;
+      }
+      nodes.forEach((n, i) => n.classList.toggle('active', i === index));
+
+      const current = SLIDES[index] || {};
+      stopBgVideo();
+
+      const activeEl = nodes[index];
+      if (activeEl) {
+        if (current.type === 'welcome' || current.type === 'questions') {
+          startBgRotation(activeEl);
+        } else if (current.type === 'demo') {
+          /* демо-видео с controls — не автозапуск; первый кадр через preload=metadata */
+        }
+      }
+
+      const total = SLIDES.length;
+      updateProgressSegments();
+
+      let label = current.block_title || current.title || 'Выступление';
+      if (current.type === 'qa') {
+        label += ' — ?';
+      } else if (current.section_title) {
+        label += ' — ' + current.section_title;
+      }
+      if (current.type === 'demo') label += ' · демо ' + current.index;
+      progressLabel.textContent = label;
+      progressCount.textContent = `${index + 1}/${total}`;
+      syncBlockTimer(current);
+      scheduleFit();
+    }
+
+    function go(delta) {
+      const next = index + delta;
+      if (next < 0 || next >= SLIDES.length) return;
+      pauseInactiveMedia();
+      index = next;
+      updateUI();
+    }
+
+    document.addEventListener('wheel', (e) => {
+      if (isMediaViewerOpen()) return;
+      if (Math.abs(e.deltaY) < 8) return;
+      e.preventDefault();
+      if (wheelLocked) return;
+      wheelLocked = true;
+      setTimeout(() => { wheelLocked = false; }, 380);
+      go(e.deltaY > 0 ? 1 : -1);
+    }, { passive: false });
+
+    document.addEventListener('keydown', (e) => {
+      if (isMediaViewerOpen()) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          closeMediaViewer();
+        }
+        return;
+      }
+      if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
+        e.preventDefault();
+        go(1);
+      }
+      if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        e.preventDefault();
+        go(-1);
+      }
+      if (e.key === 'Home' && SLIDES.length) { index = 0; updateUI(); }
+      if (e.key === 'End' && SLIDES.length) { index = SLIDES.length - 1; updateUI(); }
+    });
+
+    function bindMediaFitEvents() {
+      deck.querySelectorAll('.slide img, .slide video, .slide svg').forEach((media) => {
+        const refit = () => scheduleFit();
+        media.addEventListener('load', refit);
+        media.addEventListener('loadedmetadata', refit);
+        media.addEventListener('loadeddata', refit);
+      });
+    }
+
+    window.addEventListener('resize', scheduleFit);
+    initPresentation();
+  </script>
+</body>
+</html>
